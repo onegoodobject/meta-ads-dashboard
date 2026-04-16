@@ -7,68 +7,186 @@
     <title>One Good Object | Dashboard</title>
     <style>
         :root { --bg-dark: #0d0d0d; --card-bg: #141414; --border-color: #2a2a2a; --text-main: #f5f5f5; --text-muted: #888; --brand-yellow: #ffb800; --success-green: #00e676; --danger-red: #ff3d00; --warning-orange: #ff9100; }
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-dark); color: var(--text-main); margin: 0; padding: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 30px; }
-        .header h1 { margin: 0; font-size: 20px; font-weight: 600; display: flex; flex-direction: column; }
-        .header h1 span { font-size: 12px; color: var(--text-muted); font-weight: normal; margin-top: 4px; }
-        .status-badge { background: rgba(0, 230, 118, 0.1); color: var(--success-green); padding: 4px 10px; border-radius: 4px; font-size: 12px; border: 1px solid var(--success-green); }
-        .controls { display: flex; justify-content: space-between; background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 30px; border: 1px solid var(--border-color); flex-wrap: wrap; gap: 15px; }
-        .date-range { display: flex; gap: 10px; align-items: center; color: var(--text-muted); font-size: 14px; }
-        .date-box { background: var(--bg-dark); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 4px; color: var(--text-main); }
-        .btn-yellow { background: var(--brand-yellow); color: #000; border: none; padding: 8px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; }
-        h2 { font-size: 12px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 15px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 40px; }
+        body { font-family: 'SF Mono', 'Roboto Mono', Consolas, monospace; background-color: var(--bg-dark); color: var(--text-main); margin: 0; padding: 30px; font-size: 13px; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h1 { margin: 0; font-size: 16px; font-weight: normal; }
+        .header h1 span { color: var(--text-muted); font-size: 12px; display: block; margin-top: 5px; }
+        .badge-live { border: 1px solid var(--success-green); color: var(--success-green); padding: 4px 10px; border-radius: 20px; font-size: 12px; }
+        
+        .controls-wrapper { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+        .date-section { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .date-label { color: var(--text-muted); letter-spacing: 1px; }
+        .date-display { background: var(--bg-dark); border: 1px solid var(--border-color); padding: 8px 15px; border-radius: 6px; color: var(--brand-yellow); }
+        
+        .preset-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+        .preset-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 12px; border-radius: 20px; cursor: pointer; font-family: inherit; font-size: 12px; transition: 0.2s; }
+        .preset-btn:hover { border-color: var(--text-muted); }
+        .preset-btn.active { border-color: var(--brand-yellow); color: var(--brand-yellow); }
+        
+        h2 { font-size: 12px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 20px; font-weight: normal; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 40px; }
         .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; }
-        .card-title { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
-        .card-value { font-size: 28px; font-weight: bold; margin-bottom: 5px; }
-        .card-sub { font-size: 12px; color: var(--text-muted); }
-        .value-yellow { color: var(--brand-yellow); }
-        .funnel-container { display: flex; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; margin-bottom: 40px; }
-        .funnel-step { flex: 1; padding: 20px; border-right: 1px solid var(--border-color); }
+        .card-title { font-size: 12px; color: var(--text-muted); margin-bottom: 15px; }
+        .card-value { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+        .card-sub { font-size: 11px; color: var(--text-muted); }
+        .text-green { color: var(--success-green); }
+        .text-yellow { color: var(--brand-yellow); }
+        
+        .funnel-container { display: flex; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 40px; }
+        .funnel-step { flex: 1; padding: 25px 20px; border-right: 1px solid var(--border-color); }
         .funnel-step:last-child { border-right: none; }
-        .f-title { font-size: 10px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
-        .f-value { font-size: 22px; font-weight: bold; margin-bottom: 5px; }
-        .f-percent { font-size: 12px; color: var(--text-muted); margin-bottom: 15px; }
-        .progress-bar { height: 4px; background: #333; width: 100%; border-radius: 2px; }
-        .progress-fill { height: 100%; background: var(--brand-yellow); border-radius: 2px; }
+        .f-title { font-size: 10px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 15px; letter-spacing: 1px; }
+        .f-value { font-size: 20px; font-weight: bold; margin-bottom: 5px; }
+        .f-percent { font-size: 11px; color: var(--text-muted); margin-bottom: 20px; height: 15px; }
+        .progress-bar { height: 2px; background: #333; width: 100%; }
+        .progress-fill { height: 100%; background: var(--brand-yellow); transition: width 0.5s ease; }
         .fill-green { background: var(--success-green); }
-        .recommendation-box { background: rgba(255, 184, 0, 0.05); border: 1px solid var(--brand-yellow); border-radius: 8px; padding: 20px; margin-bottom: 40px; }
-        .recommendation-box h3 { margin-top: 0; color: var(--brand-yellow); font-size: 16px; }
-        .rec-item { margin-bottom: 10px; font-size: 14px; line-height: 1.5; }
-        @media (max-width: 768px) { .funnel-container { flex-direction: column; } .funnel-step { border-right: none; border-bottom: 1px solid var(--border-color); } }
+        
+        .table-container { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; overflow-x: auto; margin-bottom: 40px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 18px 20px; border-bottom: 1px solid var(--border-color); }
+        th { color: var(--text-muted); font-size: 11px; font-weight: normal; text-transform: uppercase; letter-spacing: 1px; }
+        tr:last-child td { border-bottom: none; }
+        .col-metric { color: var(--text-muted); }
+        .col-value { font-weight: bold; }
+        .col-bench { color: var(--text-muted); }
+        .col-notes { color: var(--text-muted); font-size: 11px; }
+        
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; white-space: nowrap; }
+        .badge-good { background: rgba(0, 230, 118, 0.1); color: var(--success-green); }
+        .badge-watch { background: rgba(255, 145, 0, 0.1); color: var(--warning-orange); }
+        .badge-bad { background: rgba(255, 61, 0, 0.1); color: var(--danger-red); }
+        .badge-none { color: var(--text-muted); }
+
+        .recommendation-box { background: rgba(255, 184, 0, 0.05); border: 1px solid var(--brand-yellow); border-radius: 8px; padding: 20px; margin-bottom: 40px; line-height: 1.6; }
+        .recommendation-box h3 { margin-top: 0; color: var(--brand-yellow); font-size: 14px; text-transform: uppercase; }
+        .rec-item { margin-bottom: 8px; }
+        
+        @media (max-width: 1000px) { .funnel-container { flex-direction: column; } .funnel-step { border-right: none; border-bottom: 1px solid var(--border-color); } }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>One Good Object <span>Meta Ads Dashboard</span></h1>
-        <div class="status-badge">Live Data Connected</div>
+        <h1>One Good Object<span>Meta Ads Dashboard</span></h1>
+        <div class="badge-live">Live Data Active</div>
     </div>
-    <div class="controls">
-        <div class="date-range">DATE RANGE <div class="date-box">15-04-2026</div> &rarr; <div class="date-box">15-04-2026</div></div>
-        <div><button class="btn-yellow">Analyze</button></div>
+
+    <div class="controls-wrapper">
+        <div class="date-section">
+            <span class="date-label">DATE RANGE</span>
+            <div class="date-display" id="date_display">Loading...</div>
+            <div class="preset-btns">
+                <button class="preset-btn" id="btn-today" onclick="updateView('today')">Today</button>
+                <button class="preset-btn active" id="btn-yesterday" onclick="updateView('yesterday')">Yesterday</button>
+                <button class="preset-btn" id="btn-last_2_days" onclick="updateView('last_2_days')">Last 2 Days</button>
+                <button class="preset-btn" id="btn-last_3_days" onclick="updateView('last_3_days')">Last 3 Days</button>
+                <button class="preset-btn" id="btn-last_7_days" onclick="updateView('last_7_days')">Last 7 Days</button>
+                <button class="preset-btn" id="btn-last_30_days" onclick="updateView('last_30_days')">Last 30 Days</button>
+            </div>
+        </div>
     </div>
+
     <div class="recommendation-box">
-        <h3>🧠 Daily AI Diagnostic</h3>
-        <div class='rec-item'>🟡 <strong>Low Intent:</strong> Low add-to-cart rate (3.1%). <strong>Action:</strong> Check product offer/pricing.</div>
+        <h3>Daily AI Diagnostic</h3>
+        <div id="recommendations_html"></div>
     </div>
+
     <h2>Performance Overview</h2>
     <div class="grid">
-        <div class="card" style="border: 1px solid var(--brand-yellow); background: rgba(255,184,0,0.02);"><div class="card-title">Amount Spent</div><div class="card-value value-yellow">₹1250</div><div class="card-sub">Total ad spend</div></div>
-        <div class="card"><div class="card-title">Reach</div><div class="card-value">3,228</div><div class="card-sub">Unique accounts</div></div>
-        <div class="card"><div class="card-title">Impressions</div><div class="card-value">5,193</div><div class="card-sub">Freq: 1.61x</div></div>
-        <div class="card"><div class="card-title">CPM</div><div class="card-value">₹241</div><div class="card-sub">Cost per 1K impressions</div></div>
-        <div class="card"><div class="card-title">Link Clicks</div><div class="card-value">226</div><div class="card-sub">All clicks</div></div>
-        <div class="card"><div class="card-title">CTR</div><div class="card-value" style="color: var(--success-green);">4.35%</div><div class="card-sub">Link click-through rate</div></div>
-        <div class="card"><div class="card-title">CPC</div><div class="card-value">₹5.53</div><div class="card-sub">Cost per link click</div></div>
-        <div class="card"><div class="card-title">Purchases</div><div class="card-value" style="color: var(--success-green);">1</div><div class="card-sub">Website purchases</div></div>
+        <div class="card" style="border-color: var(--brand-yellow); background: rgba(255,184,0,0.02);">
+            <div class="card-title">Amount Spent</div><div class="card-value text-yellow" id="spend_val">-</div><div class="card-sub">Total ad spend</div>
+        </div>
+        <div class="card"><div class="card-title">Reach</div><div class="card-value" id="reach_val">-</div><div class="card-sub">Unique accounts</div></div>
+        <div class="card"><div class="card-title">Impressions</div><div class="card-value" id="impressions_val">-</div><div class="card-sub">Freq: <span id="freq_val_sub">-</span></div></div>
+        <div class="card"><div class="card-title">CPM</div><div class="card-value" id="cpm_val">-</div><div class="card-sub">Cost per 1K impressions</div></div>
+        <div class="card"><div class="card-title">Link Clicks</div><div class="card-value" id="clicks_val">-</div><div class="card-sub">All clicks</div></div>
+        <div class="card"><div class="card-title">CTR</div><div class="card-value text-green" id="ctr_val">-</div><div class="card-sub">Link click-through rate</div></div>
+        <div class="card"><div class="card-title">CPC</div><div class="card-value" id="cpc_val">-</div><div class="card-sub">Cost per link click</div></div>
+        <div class="card"><div class="card-title">Purchases</div><div class="card-value text-green" id="pur_val_top">-</div><div class="card-sub">Website purchases</div></div>
     </div>
+
     <h2>Conversion Funnel</h2>
     <div class="funnel-container">
-        <div class="funnel-step"><div class="f-title">Impressions</div><div class="f-value">5,193</div><div class="f-percent">100%</div><div class="progress-bar"><div class="progress-fill" style="width: 100%;"></div></div></div>
-        <div class="funnel-step"><div class="f-title">Landing Views</div><div class="f-value">163</div><div class="f-percent">72.1% of clicks</div><div class="progress-bar"><div class="progress-fill" style="width: 72.12389380530973%;"></div></div></div>
-        <div class="funnel-step"><div class="f-title">Add to Cart</div><div class="f-value">5</div><div class="f-percent">3.1% of views</div><div class="progress-bar"><div class="progress-fill" style="width: 3.067484662576687%;"></div></div></div>
-        <div class="funnel-step"><div class="f-title">Checkout</div><div class="f-value">2</div><div class="f-percent">40.0% of cart</div><div class="progress-bar"><div class="progress-fill" style="width: 40.0%;"></div></div></div>
-        <div class="funnel-step"><div class="f-title">Purchases</div><div class="f-value">1</div><div class="f-percent">50.0% of checkout</div><div class="progress-bar"><div class="progress-fill fill-green" style="width: 50.0%;"></div></div></div>
+        <div class="funnel-step"><div class="f-title">Impressions</div><div class="f-value" id="impressions_val_f">-</div><div class="f-percent">100%</div><div class="progress-bar"><div class="progress-fill" style="width: 100%;"></div></div></div>
+        <div class="funnel-step"><div class="f-title">Landing Views</div><div class="f-value" id="lpv_val">-</div><div class="f-percent"><span id="lpv_rate_val_f">-</span> of clicks</div><div class="progress-bar"><div class="progress-fill" id="lpv_width" style="width: 0%;"></div></div></div>
+        <div class="funnel-step"><div class="f-title">Add to Cart</div><div class="f-value" id="atc_val">-</div><div class="f-percent"><span id="atc_rate_val_f">-</span> of views</div><div class="progress-bar"><div class="progress-fill" id="atc_width" style="width: 0%;"></div></div></div>
+        <div class="funnel-step"><div class="f-title">Checkout</div><div class="f-value" id="chk_val">-</div><div class="f-percent"><span id="chk_rate_val_f">-</span> of cart</div><div class="progress-bar"><div class="progress-fill" id="chk_width" style="width: 0%;"></div></div></div>
+        <div class="funnel-step"><div class="f-title">Payment Info</div><div class="f-value" id="pay_val">-</div><div class="f-percent">-</div><div class="progress-bar"><div class="progress-fill" style="width: 100%;"></div></div></div>
+        <div class="funnel-step"><div class="f-title">Purchases</div><div class="f-value" id="pur_val">-</div><div class="f-percent"><span id="pur_rate_val_f">-</span> of checkout</div><div class="progress-bar"><div class="progress-fill fill-green" id="pur_width" style="width: 0%;"></div></div></div>
     </div>
+
+    <h2>Full Breakdown</h2>
+    <div class="table-container">
+        <table>
+            <thead><tr><th>Metric</th><th>Value</th><th>Benchmark</th><th>Status</th><th>Notes</th></tr></thead>
+            <tbody>
+                <tr><td class="col-metric">Impressions</td><td class="col-value" id="impressions_val_t">-</td><td class="col-bench">-</td><td><span class="badge-none">-</span></td><td class="col-notes">Total times ads were shown</td></tr>
+                <tr><td class="col-metric">Reach</td><td class="col-value" id="reach_val_t">-</td><td class="col-bench">-</td><td><span class="badge-none">-</span></td><td class="col-notes">Unique accounts that saw the ad</td></tr>
+                <tr><td class="col-metric">Frequency</td><td class="col-value text-green" id="freq_val">-</td><td class="col-bench">&lt; 3x</td><td id="freq_badge">-</td><td class="col-notes">Healthy frequency</td></tr>
+                <tr><td class="col-metric">Link Clicks</td><td class="col-value" id="clicks_val_t">-</td><td class="col-bench">-</td><td><span class="badge-none">-</span></td><td class="col-notes">Clicks to your website</td></tr>
+                <tr><td class="col-metric">CTR (Link)</td><td class="col-value text-green" id="ctr_val_t">-</td><td class="col-bench">&gt; 1%</td><td id="ctr_badge">-</td><td class="col-notes">Strong click-through rate</td></tr>
+                <tr><td class="col-metric">CPC</td><td class="col-value text-green" id="cpc_val_t">-</td><td class="col-bench">&lt; ₹15</td><td id="cpc_badge">-</td><td class="col-notes">Cost per click</td></tr>
+                <tr><td class="col-metric">CPM</td><td class="col-value text-green" id="cpm_table">-</td><td class="col-bench">₹150-400</td><td id="cpm_badge">-</td><td class="col-notes">Cost to reach 1,000 people</td></tr>
+                <tr><td class="col-metric">Landing Page Views</td><td class="col-value" id="lpv_val_t">-</td><td class="col-bench">-</td><td><span class="badge-none">-</span></td><td class="col-notes">People who loaded your landing page</td></tr>
+                <tr><td class="col-metric">LPV Rate</td><td class="col-value" id="lpv_rate_val">-</td><td class="col-bench">&gt; 60%</td><td id="lpv_badge">-</td><td class="col-notes">Landing page load rate vs clicks</td></tr>
+                <tr><td class="col-metric">Add to Cart</td><td class="col-value" id="atc_val_t">-</td><td class="col-bench">-</td><td><span class="badge-none">-</span></td><td class="col-notes">Products added to cart</td></tr>
+                <tr><td class="col-metric">ATC Rate</td><td class="col-value text-green" id="atc_rate_val">-</td><td class="col-bench">&gt; 3%</td><td id="atc_badge">-</td><td class="col-notes">Add-to-cart rate from landing page views</td></tr>
+                <tr><td class="col-metric">Checkouts Initiated</td><td class="col-value" id="chk_val_t">-</td><td class="col-bench">-</td><td><span class="badge-none">-</span></td><td class="col-notes">Users who started checkout</td></tr>
+                <tr><td class="col-metric">Checkout Rate</td><td class="col-value" id="chk_rate_val">-</td><td class="col-bench">&gt; 50%</td><td id="chk_badge">-</td><td class="col-notes">Checkout rate from cart adds</td></tr>
+                <tr><td class="col-metric">Payment Info Added</td><td class="col-value" id="pay_val_t">-</td><td class="col-bench">-</td><td><span class="badge-none">-</span></td><td class="col-notes">Users who entered payment details</td></tr>
+                <tr><td class="col-metric">Purchases</td><td class="col-value text-green" id="pur_val_t">-</td><td class="col-bench">-</td><td id="pur_badge">-</td><td class="col-notes">Completed website purchases</td></tr>
+                <tr><td class="col-metric">Cost per Purchase</td><td class="col-value" id="cpp_val">-</td><td class="col-bench">Depends on AOV</td><td><span class="badge-none">-</span></td><td class="col-notes">Total spend &divide; purchases</td></tr>
+                <tr><td class="col-metric">Amount Spent</td><td class="col-value" id="spend_table">-</td><td class="col-bench">-</td><td><span class="badge-none">-</span></td><td class="col-notes">Total ad spend for period</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Inject Python data into Javascript
+        const dashData = {"today": {"date_display": "16/04/2026 &rarr; 16/04/2026", "recommendations_html": "<div class='rec-item'>\ud83d\udfe1 <strong>Low Intent:</strong> Low add-to-cart rate (1.4%). <strong>Action:</strong> Check product offer/pricing.</div>", "spend_val": "\u20b9648", "spend_table": "\u20b9648.22", "reach_val": "1,326", "impressions_val": "2,063", "freq_val": "1.56x", "freq_badge": "<span class='badge badge-good'>Good</span>", "cpm_val": "\u20b9314", "cpm_table": "\u20b9314.21", "cpm_badge": "<span class='badge badge-good'>Good</span>", "clicks_val": "95", "ctr_val": "4.60%", "ctr_badge": "<span class='badge badge-good'>Good</span>", "cpc_val": "\u20b96.82", "cpc_badge": "<span class='badge badge-good'>Good</span>", "pur_val": "0", "pur_badge": "<span class='badge badge-bad'>Action needed</span>", "cpp_val": "\u20b90", "lpv_val": "71", "lpv_rate_val": "74.74%", "lpv_badge": "<span class='badge badge-good'>Good</span>", "lpv_width": "74.73684210526315%", "atc_val": "1", "atc_rate_val": "1.41%", "atc_badge": "<span class='badge badge-bad'>Action needed</span>", "atc_width": "1.4084507042253522%", "chk_val": "0", "chk_rate_val": "0%", "chk_badge": "<span class='badge badge-watch'>Watch</span>", "chk_width": "0.0%", "pay_val": "0", "pur_rate_val": "0.00%", "pur_width": "0%"}, "yesterday": {"date_display": "15/04/2026 &rarr; 15/04/2026", "recommendations_html": "<div class='rec-item'>\ud83d\udd34 <strong>Cart Abandonment:</strong> Low checkout initiation (40.0%). <strong>Action:</strong> Check shipping costs.</div>", "spend_val": "\u20b91250", "spend_table": "\u20b91250.22", "reach_val": "3,228", "impressions_val": "5,193", "freq_val": "1.61x", "freq_badge": "<span class='badge badge-good'>Good</span>", "cpm_val": "\u20b9241", "cpm_table": "\u20b9240.75", "cpm_badge": "<span class='badge badge-good'>Good</span>", "clicks_val": "226", "ctr_val": "4.35%", "ctr_badge": "<span class='badge badge-good'>Good</span>", "cpc_val": "\u20b95.53", "cpc_badge": "<span class='badge badge-good'>Good</span>", "pur_val": "1", "pur_badge": "<span class='badge badge-good'>Good</span>", "cpp_val": "\u20b91250", "lpv_val": "163", "lpv_rate_val": "72.12%", "lpv_badge": "<span class='badge badge-good'>Good</span>", "lpv_width": "72.12389380530973%", "atc_val": "5", "atc_rate_val": "3.07%", "atc_badge": "<span class='badge badge-good'>Good</span>", "atc_width": "3.067484662576687%", "chk_val": "2", "chk_rate_val": "40%", "chk_badge": "<span class='badge badge-watch'>Watch</span>", "chk_width": "40.0%", "pay_val": "1", "pur_rate_val": "50.00%", "pur_width": "50.0%"}, "last_2_days": {"date_display": "14/04/2026 &rarr; 15/04/2026", "recommendations_html": "<div class='rec-item'>\ud83d\udfe1 <strong>Low Intent:</strong> Low add-to-cart rate (1.3%). <strong>Action:</strong> Check product offer/pricing.</div>", "spend_val": "\u20b92172", "spend_table": "\u20b92172.20", "reach_val": "5,008", "impressions_val": "9,363", "freq_val": "1.87x", "freq_badge": "<span class='badge badge-good'>Good</span>", "cpm_val": "\u20b9232", "cpm_table": "\u20b9232.00", "cpm_badge": "<span class='badge badge-good'>Good</span>", "clicks_val": "868", "ctr_val": "9.27%", "ctr_badge": "<span class='badge badge-good'>Good</span>", "cpc_val": "\u20b92.50", "cpc_badge": "<span class='badge badge-good'>Good</span>", "pur_val": "1", "pur_badge": "<span class='badge badge-good'>Good</span>", "cpp_val": "\u20b92172", "lpv_val": "535", "lpv_rate_val": "61.64%", "lpv_badge": "<span class='badge badge-good'>Good</span>", "lpv_width": "61.63594470046083%", "atc_val": "7", "atc_rate_val": "1.31%", "atc_badge": "<span class='badge badge-bad'>Action needed</span>", "atc_width": "1.3084112149532712%", "chk_val": "2", "chk_rate_val": "29%", "chk_badge": "<span class='badge badge-watch'>Watch</span>", "chk_width": "28.57142857142857%", "pay_val": "1", "pur_rate_val": "50.00%", "pur_width": "50.0%"}, "last_3_days": {"date_display": "13/04/2026 &rarr; 15/04/2026", "recommendations_html": "<div class='rec-item'>\ud83d\udd34 <strong>Traffic Drop-off:</strong> Low Landing Page Views (51.7% load rate). <strong>Action:</strong> Check site speed.</div>", "spend_val": "\u20b93472", "spend_table": "\u20b93471.94", "reach_val": "8,620", "impressions_val": "20,459", "freq_val": "2.37x", "freq_badge": "<span class='badge badge-good'>Good</span>", "cpm_val": "\u20b9170", "cpm_table": "\u20b9169.70", "cpm_badge": "<span class='badge badge-good'>Good</span>", "clicks_val": "3,392", "ctr_val": "16.58%", "ctr_badge": "<span class='badge badge-good'>Good</span>", "cpc_val": "\u20b91.02", "cpc_badge": "<span class='badge badge-good'>Good</span>", "pur_val": "1", "pur_badge": "<span class='badge badge-good'>Good</span>", "cpp_val": "\u20b93472", "lpv_val": "1,753", "lpv_rate_val": "51.68%", "lpv_badge": "<span class='badge badge-bad'>Action needed</span>", "lpv_width": "51.680424528301884%", "atc_val": "13", "atc_rate_val": "0.74%", "atc_badge": "<span class='badge badge-bad'>Action needed</span>", "atc_width": "0.7415858528237307%", "chk_val": "2", "chk_rate_val": "15%", "chk_badge": "<span class='badge badge-watch'>Watch</span>", "chk_width": "15.384615384615385%", "pay_val": "1", "pur_rate_val": "50.00%", "pur_width": "50.0%"}, "last_7_days": {"date_display": "09/04/2026 &rarr; 15/04/2026", "recommendations_html": "<div class='rec-item'>\ud83d\udd34 <strong>Traffic Drop-off:</strong> Low Landing Page Views (47.8% load rate). <strong>Action:</strong> Check site speed.</div>", "spend_val": "\u20b94879", "spend_table": "\u20b94879.23", "reach_val": "625,537", "impressions_val": "649,945", "freq_val": "1.04x", "freq_badge": "<span class='badge badge-good'>Good</span>", "cpm_val": "\u20b98", "cpm_table": "\u20b97.51", "cpm_badge": "<span class='badge badge-bad'>Action needed</span>", "clicks_val": "4,190", "ctr_val": "0.64%", "ctr_badge": "<span class='badge badge-bad'>Action needed</span>", "cpc_val": "\u20b91.16", "cpc_badge": "<span class='badge badge-good'>Good</span>", "pur_val": "1", "pur_badge": "<span class='badge badge-good'>Good</span>", "cpp_val": "\u20b94879", "lpv_val": "2,002", "lpv_rate_val": "47.78%", "lpv_badge": "<span class='badge badge-bad'>Action needed</span>", "lpv_width": "47.78042959427208%", "atc_val": "13", "atc_rate_val": "0.65%", "atc_badge": "<span class='badge badge-bad'>Action needed</span>", "atc_width": "0.6493506493506493%", "chk_val": "2", "chk_rate_val": "15%", "chk_badge": "<span class='badge badge-watch'>Watch</span>", "chk_width": "15.384615384615385%", "pay_val": "1", "pur_rate_val": "50.00%", "pur_width": "50.0%"}, "last_30_days": {"date_display": "17/03/2026 &rarr; 15/04/2026", "recommendations_html": "<div class='rec-item'>\ud83d\udd34 <strong>Traffic Drop-off:</strong> Low Landing Page Views (36.4% load rate). <strong>Action:</strong> Check site speed.</div>", "spend_val": "\u20b914031", "spend_table": "\u20b914031.32", "reach_val": "3,566,277", "impressions_val": "5,795,775", "freq_val": "1.63x", "freq_badge": "<span class='badge badge-good'>Good</span>", "cpm_val": "\u20b92", "cpm_table": "\u20b92.42", "cpm_badge": "<span class='badge badge-bad'>Action needed</span>", "clicks_val": "9,960", "ctr_val": "0.17%", "ctr_badge": "<span class='badge badge-bad'>Action needed</span>", "cpc_val": "\u20b91.41", "cpc_badge": "<span class='badge badge-good'>Good</span>", "pur_val": "1", "pur_badge": "<span class='badge badge-good'>Good</span>", "cpp_val": "\u20b914031", "lpv_val": "3,622", "lpv_rate_val": "36.37%", "lpv_badge": "<span class='badge badge-bad'>Action needed</span>", "lpv_width": "36.365461847389554%", "atc_val": "13", "atc_rate_val": "0.36%", "atc_badge": "<span class='badge badge-bad'>Action needed</span>", "atc_width": "0.35891772501380453%", "chk_val": "2", "chk_rate_val": "15%", "chk_badge": "<span class='badge badge-watch'>Watch</span>", "chk_width": "15.384615384615385%", "pay_val": "1", "pur_rate_val": "50.00%", "pur_width": "50.0%"}};
+
+        function updateView(period) {
+            // Update Active Button UI
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('btn-' + period).classList.add('active');
+
+            const d = dashData[period];
+            if(!d) return;
+
+            // Loop through all data keys and update the corresponding HTML elements
+            for (const [key, value] of Object.entries(d)) {
+                const el = document.getElementById(key);
+                if (el) {
+                    if (key.includes('width')) {
+                        el.style.width = value;
+                    } else {
+                        el.innerHTML = value;
+                    }
+                }
+                
+                // Handle duplicate elements needed in multiple places
+                if(key === 'freq_val') document.getElementById('freq_val_sub').innerHTML = value;
+                if(key === 'impressions_val') { document.getElementById('impressions_val_f').innerHTML = value; document.getElementById('impressions_val_t').innerHTML = value; }
+                if(key === 'clicks_val') document.getElementById('clicks_val_t').innerHTML = value;
+                if(key === 'ctr_val') document.getElementById('ctr_val_t').innerHTML = value;
+                if(key === 'cpc_val') document.getElementById('cpc_val_t').innerHTML = value;
+                if(key === 'lpv_val') document.getElementById('lpv_val_t').innerHTML = value;
+                if(key === 'lpv_rate_val') document.getElementById('lpv_rate_val_f').innerHTML = value;
+                if(key === 'atc_val') document.getElementById('atc_val_t').innerHTML = value;
+                if(key === 'atc_rate_val') document.getElementById('atc_rate_val_f').innerHTML = value;
+                if(key === 'chk_val') document.getElementById('chk_val_t').innerHTML = value;
+                if(key === 'chk_rate_val') document.getElementById('chk_rate_val_f').innerHTML = value;
+                if(key === 'pay_val') document.getElementById('pay_val_t').innerHTML = value;
+                if(key === 'pur_val') { document.getElementById('pur_val_top').innerHTML = value; document.getElementById('pur_val_t').innerHTML = value; }
+                if(key === 'pur_rate_val') document.getElementById('pur_rate_val_f').innerHTML = value;
+                if(key === 'reach_val') document.getElementById('reach_val_t').innerHTML = value;
+            }
+        }
+
+        // Load Yesterday's data by default on page load
+        updateView('yesterday');
+    </script>
 </body>
 </html>
