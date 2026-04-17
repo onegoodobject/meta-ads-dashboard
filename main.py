@@ -4,7 +4,7 @@ import json
 from facebook_business.api import FacebookAdsApi
 from facebook_business.adobjects.adaccount import AdAccount
 
-# 1. AUTHENTICATE WITH SECRETS
+# 1. AUTHENTICATE
 app_id = os.environ.get('META_APP_ID')
 app_secret = os.environ.get('META_APP_SECRET')
 access_token = os.environ.get('META_ACCESS_TOKEN')
@@ -13,45 +13,38 @@ ad_account_id = os.environ.get('META_AD_ACCOUNT_ID')
 FacebookAdsApi.init(app_id, app_secret, access_token)
 account = AdAccount(ad_account_id)
 
-# 2. DEFINE THE PRESETS (LOCKED TO IST)
+# 2. DEFINE PRESETS (LOCKED TO IST) & COMPARISONS
 utc_now = datetime.datetime.utcnow()
 ist_now = utc_now + datetime.timedelta(hours=5, minutes=30)
 today = ist_now.date()
-yesterday = today - datetime.timedelta(days=1)
+
+def get_dates(days_back, duration):
+    start = today - datetime.timedelta(days=days_back)
+    end = start + datetime.timedelta(days=duration - 1)
+    return start, end
 
 presets = {
-    'today': (today, today),
-    'yesterday': (yesterday, yesterday),
-    'last_2_days': (today - datetime.timedelta(days=2), yesterday),
-    'last_3_days': (today - datetime.timedelta(days=3), yesterday),
-    'last_7_days': (today - datetime.timedelta(days=7), yesterday),
-    'last_30_days': (today - datetime.timedelta(days=30), yesterday)
+    'today': {'curr': (today, today), 'prev': (today - datetime.timedelta(days=1), today - datetime.timedelta(days=1))},
+    'yesterday': {'curr': (today - datetime.timedelta(days=1), today - datetime.timedelta(days=1)), 'prev': (today - datetime.timedelta(days=2), today - datetime.timedelta(days=2))},
+    'last_2_days': {'curr': get_dates(2, 2), 'prev': get_dates(4, 2)},
+    'last_3_days': {'curr': get_dates(3, 3), 'prev': get_dates(6, 3)},
+    'last_7_days': {'curr': get_dates(7, 7), 'prev': get_dates(14, 7)},
+    'last_30_days': {'curr': get_dates(30, 30), 'prev': get_dates(60, 30)}
 }
 
-def get_status(condition, good_text="Good", bad_text="Action needed", watch=False):
-    if condition: return f"<span class='badge badge-good'>{good_text}</span>"
-    if watch: return f"<span class='badge badge-watch'>{bad_text}</span>"
-    return f"<span class='badge badge-bad'>{bad_text}</span>"
-
-all_data = {}
-
-print("Fetching data for all presets...")
-
-# 3. FETCH AND PROCESS ALL PRESETS
-for period, (start_date, end_date) in presets.items():
+# 3. HELPER FUNCTIONS
+def fetch_data(start_date, end_date):
     start_str = start_date.strftime('%Y-%m-%d')
     end_str = end_date.strftime('%Y-%m-%d')
-    
     params = {'time_range': {'since': start_str, 'until': end_str}, 'level': 'account'}
     fields = ['spend', 'reach', 'impressions', 'inline_link_clicks', 'actions']
     
     try:
         insights = account.get_insights(fields=fields, params=params)
     except Exception as e:
-        print(f"Error fetching {period}: {e}")
-        insights = []
+        print(f"Error fetching {start_str}: {e}")
+        return None
 
-    # Parse
     raw = {'spend': 0.0, 'reach': 0, 'impressions': 0, 'link_clicks': 0, 'lpv': 0, 'atc': 0, 'chk': 0, 'pay': 0, 'pur': 0}
     if insights:
         row = insights[0]
@@ -67,72 +60,128 @@ for period, (start_date, end_date) in presets.items():
             elif t == 'initiate_checkout': raw['chk'] = v
             elif t == 'add_payment_info': raw['pay'] = v
             elif t == 'purchase': raw['pur'] = v
+            
+    # Calculations
+    raw['cpm'] = (raw['spend'] / raw['impressions']) * 1000 if raw['impressions'] else 0
+    raw['ctr'] = (raw['link_clicks'] / raw['impressions']) * 100 if raw['impressions'] else 0
+    raw['cpc'] = raw['spend'] / raw['link_clicks'] if raw['link_clicks'] else 0
+    raw['freq'] = raw['impressions'] / raw['reach'] if raw['reach'] else 0
+    raw['cpp'] = raw['spend'] / raw['pur'] if raw['pur'] else 0
+    raw['lpv_rate'] = (raw['lpv'] / raw['link_clicks']) * 100 if raw['link_clicks'] else 0
+    raw['atc_rate'] = (raw['atc'] / raw['lpv']) * 100 if raw['lpv'] else 0
+    raw['chk_rate'] = (raw['chk'] / raw['atc']) * 100 if raw['atc'] else 0
+    raw['pur_rate'] = (raw['pur'] / raw['chk']) * 100 if raw['chk'] else 0
+    return raw
 
-    # Calculate
-    cpm = (raw['spend'] / raw['impressions']) * 1000 if raw['impressions'] else 0
-    ctr = (raw['link_clicks'] / raw['impressions']) * 100 if raw['impressions'] else 0
-    cpc = raw['spend'] / raw['link_clicks'] if raw['link_clicks'] else 0
-    freq = raw['impressions'] / raw['reach'] if raw['reach'] else 0
-    cpp = raw['spend'] / raw['pur'] if raw['pur'] else 0
-
-    lpv_rate = (raw['lpv'] / raw['link_clicks']) * 100 if raw['link_clicks'] else 0
-    atc_rate = (raw['atc'] / raw['lpv']) * 100 if raw['lpv'] else 0
-    chk_rate = (raw['chk'] / raw['atc']) * 100 if raw['atc'] else 0
-    pur_rate = (raw['pur'] / raw['chk']) * 100 if raw['chk'] else 0
-
-    # Diagnostic Logic
-    recs = []
-    if freq > 3.0: recs.append("🟡 <strong>Creative Fatigue:</strong> Frequency is over 3. Refresh creatives.")
-    if cpm > 400: recs.append("🔴 <strong>High CPM:</strong> Audience is too narrow or competition is fierce.")
-    if raw['link_clicks'] > 0 and lpv_rate < 60: recs.append(f"🔴 <strong>Traffic Drop-off:</strong> Low Landing Page Views ({lpv_rate:.1f}% load rate). <strong>Action:</strong> Check site speed.")
-    elif raw['lpv'] > 0 and atc_rate < 3: recs.append(f"🟡 <strong>Low Intent:</strong> Low add-to-cart rate ({atc_rate:.1f}%). <strong>Action:</strong> Check product offer/pricing.")
-    elif raw['atc'] > 0 and chk_rate < 50: recs.append(f"🔴 <strong>Cart Abandonment:</strong> Low checkout initiation ({chk_rate:.1f}%). <strong>Action:</strong> Check shipping costs.")
-    elif raw['chk'] > 0 and pur_rate < 50: recs.append("🟡 <strong>Payment Friction:</strong> Users start checkout but don't finish. Check payment gateways.")
+def calc_trend(curr, prev, lower_is_better=False, is_spend=False):
+    if prev == 0 and curr == 0: return ""
+    if prev == 0 and curr > 0: return "<span class='trend-up text-green'>↑ ∞</span>" if not lower_is_better else "<span class='trend-up text-red'>↑ ∞</span>"
     
-    if not recs and raw['spend'] > 0: recs.append("🟢 <strong>Healthy Funnel:</strong> Metrics are stable. Let it optimize.")
-    elif raw['spend'] == 0: recs.append("⚪ <strong>No Spend Detected:</strong> Ensure campaigns are active and delivering.")
+    change = ((curr - prev) / prev) * 100
+    if abs(change) < 0.1: return "<span class='trend-neutral text-muted'>= 0%</span>"
+    
+    arrow = "↑" if change > 0 else "↓"
+    
+    if is_spend:
+        color = "text-muted" # Spend going up/down isn't inherently good/bad, depends on strategy
+    elif change > 0:
+        color = "text-red" if lower_is_better else "text-green"
+    else:
+        color = "text-green" if lower_is_better else "text-red"
+        
+    return f"<span class='trend-{arrow} {color}'>{arrow} {abs(change):.1f}%</span>"
 
-    # Format for JSON payload
+def get_status(condition, good_text="Good", bad_text="Action needed", watch=False):
+    if condition: return f"<span class='badge badge-good'>{good_text}</span>"
+    if watch: return f"<span class='badge badge-watch'>{bad_text}</span>"
+    return f"<span class='badge badge-bad'>{bad_text}</span>"
+
+all_data = {}
+
+# 4. PROCESS ALL PRESETS & COMPARISONS
+for period, dates in presets.items():
+    curr_data = fetch_data(dates['curr'][0], dates['curr'][1])
+    prev_data = fetch_data(dates['prev'][0], dates['prev'][1])
+    
+    # Failsafe if API completely fails
+    if not curr_data: curr_data = fetch_data(today, today) # Return empty template
+    if not prev_data: prev_data = curr_data 
+
+    # Diagnostic Logic (Based on current period)
+    recs = []
+    if curr_data['freq'] > 3.0: recs.append("🟡 <strong>Creative Fatigue:</strong> Frequency > 3. Refresh creatives.")
+    if curr_data['cpm'] > 400: recs.append("🔴 <strong>High CPM:</strong> Audience is too narrow or competition is fierce.")
+    if curr_data['link_clicks'] > 0 and curr_data['lpv_rate'] < 60: recs.append(f"🔴 <strong>Traffic Drop:</strong> Low Load Rate ({curr_data['lpv_rate']:.1f}%). Check site speed.")
+    elif curr_data['lpv'] > 0 and curr_data['atc_rate'] < 3: recs.append(f"🟡 <strong>Low Intent:</strong> Low ATC rate ({curr_data['atc_rate']:.1f}%). Check product offer.")
+    elif curr_data['atc'] > 0 and curr_data['chk_rate'] < 50: recs.append(f"🔴 <strong>Cart Abandon:</strong> Low checkout initiation ({curr_data['chk_rate']:.1f}%). Check shipping costs.")
+    elif curr_data['chk'] > 0 and curr_data['pur_rate'] < 50: recs.append("🟡 <strong>Payment Friction:</strong> Users start checkout but don't finish.")
+    if not recs and curr_data['spend'] > 0: recs.append("🟢 <strong>Healthy Funnel:</strong> Metrics are stable.")
+    elif curr_data['spend'] == 0: recs.append("⚪ <strong>No Spend Detected:</strong> Ensure campaigns are active.")
+
+    # Package Data + Trends
     all_data[period] = {
-        'date_display': f"{start_date.strftime('%d/%m/%Y')} &rarr; {end_date.strftime('%d/%m/%Y')}",
+        'date_display': f"{dates['curr'][0].strftime('%d/%m/%Y')} &rarr; {dates['curr'][1].strftime('%d/%m/%Y')}",
+        'compare_text': f"vs {dates['prev'][0].strftime('%d/%m')} - {dates['prev'][1].strftime('%d/%m')}",
         'recommendations_html': "".join([f"<div class='rec-item'>{r}</div>" for r in recs]),
-        'spend_val': f"₹{raw['spend']:.0f}",
-        'spend_table': f"₹{raw['spend']:.2f}",
-        'reach_val': f"{raw['reach']:,}",
-        'impressions_val': f"{raw['impressions']:,}",
-        'freq_val': f"{freq:.2f}x",
-        'freq_badge': get_status(freq < 3.0),
-        'cpm_val': f"₹{cpm:.0f}",
-        'cpm_table': f"₹{cpm:.2f}",
-        'cpm_badge': get_status(150 <= cpm <= 400),
-        'clicks_val': f"{raw['link_clicks']:,}",
-        'ctr_val': f"{ctr:.2f}%",
-        'ctr_badge': get_status(ctr > 1.0),
-        'cpc_val': f"₹{cpc:.2f}",
-        'cpc_badge': get_status(cpc < 15.0),
-        'pur_val': f"{raw['pur']}",
-        'pur_badge': get_status(raw['pur'] > 0),
-        'cpp_val': f"₹{cpp:.0f}",
-        'lpv_val': f"{raw['lpv']:,}",
-        'lpv_rate_val': f"{lpv_rate:.2f}%",
-        'lpv_badge': get_status(lpv_rate > 60.0),
-        'lpv_width': f"{min(100, lpv_rate)}%",
-        'atc_val': f"{raw['atc']}",
-        'atc_rate_val': f"{atc_rate:.2f}%",
-        'atc_badge': get_status(atc_rate > 3.0),
-        'atc_width': f"{min(100, atc_rate)}%",
-        'chk_val': f"{raw['chk']}",
-        'chk_rate_val': f"{chk_rate:.0f}%",
-        'chk_badge': get_status(chk_rate > 50.0, bad_text="Watch", watch=True),
-        'chk_width': f"{min(100, chk_rate)}%",
-        'pay_val': f"{raw['pay']}",
-        'pur_rate_val': f"{pur_rate:.2f}%",
-        'pur_width': f"{min(100, pur_rate)}%",
+        
+        'spend_val': f"₹{curr_data['spend']:.0f}",
+        'spend_trend': calc_trend(curr_data['spend'], prev_data['spend'], is_spend=True),
+        'spend_table': f"₹{curr_data['spend']:.2f}",
+        
+        'reach_val': f"{curr_data['reach']:,}",
+        'reach_trend': calc_trend(curr_data['reach'], prev_data['reach']),
+        
+        'impressions_val': f"{curr_data['impressions']:,}",
+        'impressions_trend': calc_trend(curr_data['impressions'], prev_data['impressions']),
+        
+        'freq_val': f"{curr_data['freq']:.2f}x",
+        'freq_badge': get_status(curr_data['freq'] < 3.0),
+        
+        'cpm_val': f"₹{curr_data['cpm']:.0f}",
+        'cpm_trend': calc_trend(curr_data['cpm'], prev_data['cpm'], lower_is_better=True),
+        'cpm_table': f"₹{curr_data['cpm']:.2f}",
+        'cpm_badge': get_status(150 <= curr_data['cpm'] <= 400),
+        
+        'clicks_val': f"{curr_data['link_clicks']:,}",
+        'clicks_trend': calc_trend(curr_data['link_clicks'], prev_data['link_clicks']),
+        
+        'ctr_val': f"{curr_data['ctr']:.2f}%",
+        'ctr_trend': calc_trend(curr_data['ctr'], prev_data['ctr']),
+        'ctr_badge': get_status(curr_data['ctr'] > 1.0),
+        
+        'cpc_val': f"₹{curr_data['cpc']:.2f}",
+        'cpc_trend': calc_trend(curr_data['cpc'], prev_data['cpc'], lower_is_better=True),
+        'cpc_badge': get_status(curr_data['cpc'] < 15.0),
+        
+        'pur_val': f"{curr_data['pur']}",
+        'pur_trend': calc_trend(curr_data['pur'], prev_data['pur']),
+        'pur_badge': get_status(curr_data['pur'] > 0),
+        
+        'cpp_val': f"₹{curr_data['cpp']:.0f}",
+        
+        'lpv_val': f"{curr_data['lpv']:,}",
+        'lpv_rate_val': f"{curr_data['lpv_rate']:.2f}%",
+        'lpv_badge': get_status(curr_data['lpv_rate'] > 60.0),
+        'lpv_width': f"{min(100, curr_data['lpv_rate'])}%",
+        
+        'atc_val': f"{curr_data['atc']}",
+        'atc_rate_val': f"{curr_data['atc_rate']:.2f}%",
+        'atc_badge': get_status(curr_data['atc_rate'] > 3.0),
+        'atc_width': f"{min(100, curr_data['atc_rate'])}%",
+        
+        'chk_val': f"{curr_data['chk']}",
+        'chk_rate_val': f"{curr_data['chk_rate']:.0f}%",
+        'chk_badge': get_status(curr_data['chk_rate'] > 50.0, bad_text="Watch", watch=True),
+        'chk_width': f"{min(100, curr_data['chk_rate'])}%",
+        
+        'pay_val': f"{curr_data['pay']}",
+        'pur_rate_val': f"{curr_data['pur_rate']:.2f}%",
+        'pur_width': f"{min(100, curr_data['pur_rate'])}%",
     }
 
 json_data = json.dumps(all_data)
 
-# 4. GENERATE HTML WITH EMBEDDED JS
+# 5. GENERATE HTML
 html_content = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -153,6 +202,7 @@ html_content = f"""
         .date-section {{ display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }}
         .date-label {{ color: var(--text-muted); letter-spacing: 1px; }}
         .date-display {{ background: var(--bg-dark); border: 1px solid var(--border-color); padding: 8px 15px; border-radius: 6px; color: var(--brand-yellow); }}
+        .compare-text {{ color: var(--text-muted); font-size: 11px; margin-left: 5px; }}
         
         .preset-btns {{ display: flex; gap: 8px; flex-wrap: wrap; }}
         .preset-btn {{ background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 12px; border-radius: 20px; cursor: pointer; font-family: inherit; font-size: 12px; transition: 0.2s; }}
@@ -163,11 +213,15 @@ html_content = f"""
         
         .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 40px; }}
         .card {{ background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; }}
-        .card-title {{ font-size: 12px; color: var(--text-muted); margin-bottom: 15px; }}
-        .card-value {{ font-size: 24px; font-weight: bold; margin-bottom: 10px; }}
+        .card-title {{ font-size: 12px; color: var(--text-muted); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }}
+        .card-value {{ font-size: 24px; font-weight: bold; margin-bottom: 10px; display: flex; align-items: baseline; gap: 10px; }}
         .card-sub {{ font-size: 11px; color: var(--text-muted); }}
+        
+        .trend-indicator {{ font-size: 12px; font-weight: normal; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.05); }}
         .text-green {{ color: var(--success-green); }}
+        .text-red {{ color: var(--danger-red); }}
         .text-yellow {{ color: var(--brand-yellow); }}
+        .text-muted {{ color: var(--text-muted); }}
         
         .funnel-container {{ display: flex; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 40px; }}
         .funnel-step {{ flex: 1; padding: 25px 20px; border-right: 1px solid var(--border-color); }}
@@ -211,7 +265,10 @@ html_content = f"""
     <div class="controls-wrapper">
         <div class="date-section">
             <span class="date-label">DATE RANGE</span>
-            <div class="date-display" id="date_display">Loading...</div>
+            <div style="display:flex; align-items:center;">
+                <div class="date-display" id="date_display">Loading...</div>
+                <span class="compare-text" id="compare_text">vs ...</span>
+            </div>
             <div class="preset-btns">
                 <button class="preset-btn" id="btn-today" onclick="updateView('today')">Today</button>
                 <button class="preset-btn active" id="btn-yesterday" onclick="updateView('yesterday')">Yesterday</button>
@@ -231,15 +288,45 @@ html_content = f"""
     <h2>Performance Overview</h2>
     <div class="grid">
         <div class="card" style="border-color: var(--brand-yellow); background: rgba(255,184,0,0.02);">
-            <div class="card-title">Amount Spent</div><div class="card-value text-yellow" id="spend_val">-</div><div class="card-sub">Total ad spend</div>
+            <div class="card-title">Amount Spent</div>
+            <div class="card-value text-yellow"><span id="spend_val">-</span> <span class="trend-indicator" id="spend_trend"></span></div>
+            <div class="card-sub">Total ad spend</div>
         </div>
-        <div class="card"><div class="card-title">Reach</div><div class="card-value" id="reach_val">-</div><div class="card-sub">Unique accounts</div></div>
-        <div class="card"><div class="card-title">Impressions</div><div class="card-value" id="impressions_val">-</div><div class="card-sub">Freq: <span id="freq_val_sub">-</span></div></div>
-        <div class="card"><div class="card-title">CPM</div><div class="card-value" id="cpm_val">-</div><div class="card-sub">Cost per 1K impressions</div></div>
-        <div class="card"><div class="card-title">Link Clicks</div><div class="card-value" id="clicks_val">-</div><div class="card-sub">All clicks</div></div>
-        <div class="card"><div class="card-title">CTR</div><div class="card-value text-green" id="ctr_val">-</div><div class="card-sub">Link click-through rate</div></div>
-        <div class="card"><div class="card-title">CPC</div><div class="card-value" id="cpc_val">-</div><div class="card-sub">Cost per link click</div></div>
-        <div class="card"><div class="card-title">Purchases</div><div class="card-value text-green" id="pur_val_top">-</div><div class="card-sub">Website purchases</div></div>
+        <div class="card">
+            <div class="card-title">Reach</div>
+            <div class="card-value"><span id="reach_val">-</span> <span class="trend-indicator" id="reach_trend"></span></div>
+            <div class="card-sub">Unique accounts</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Impressions</div>
+            <div class="card-value"><span id="impressions_val">-</span> <span class="trend-indicator" id="impressions_trend"></span></div>
+            <div class="card-sub">Freq: <span id="freq_val_sub">-</span></div>
+        </div>
+        <div class="card">
+            <div class="card-title">CPM</div>
+            <div class="card-value"><span id="cpm_val">-</span> <span class="trend-indicator" id="cpm_trend"></span></div>
+            <div class="card-sub">Cost per 1K impressions</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Link Clicks</div>
+            <div class="card-value"><span id="clicks_val">-</span> <span class="trend-indicator" id="clicks_trend"></span></div>
+            <div class="card-sub">All clicks</div>
+        </div>
+        <div class="card">
+            <div class="card-title">CTR</div>
+            <div class="card-value text-green"><span id="ctr_val">-</span> <span class="trend-indicator" id="ctr_trend"></span></div>
+            <div class="card-sub">Link click-through rate</div>
+        </div>
+        <div class="card">
+            <div class="card-title">CPC</div>
+            <div class="card-value"><span id="cpc_val">-</span> <span class="trend-indicator" id="cpc_trend"></span></div>
+            <div class="card-sub">Cost per link click</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Purchases</div>
+            <div class="card-value text-green"><span id="pur_val_top">-</span> <span class="trend-indicator" id="pur_trend"></span></div>
+            <div class="card-sub">Website purchases</div>
+        </div>
     </div>
 
     <h2>Conversion Funnel</h2>
@@ -279,29 +366,22 @@ html_content = f"""
     </div>
 
     <script>
-        // Inject Python data into Javascript
         const dashData = {json_data};
 
         function updateView(period) {{
-            // Update Active Button UI
             document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById('btn-' + period).classList.add('active');
 
             const d = dashData[period];
             if(!d) return;
 
-            // Loop through all data keys and update the corresponding HTML elements
             for (const [key, value] of Object.entries(d)) {{
                 const el = document.getElementById(key);
                 if (el) {{
-                    if (key.includes('width')) {{
-                        el.style.width = value;
-                    }} else {{
-                        el.innerHTML = value;
-                    }}
+                    if (key.includes('width')) el.style.width = value;
+                    else el.innerHTML = value;
                 }}
                 
-                // Handle duplicate elements needed in multiple places
                 if(key === 'freq_val') document.getElementById('freq_val_sub').innerHTML = value;
                 if(key === 'impressions_val') {{ document.getElementById('impressions_val_f').innerHTML = value; document.getElementById('impressions_val_t').innerHTML = value; }}
                 if(key === 'clicks_val') document.getElementById('clicks_val_t').innerHTML = value;
@@ -320,7 +400,6 @@ html_content = f"""
             }}
         }}
 
-        // Load Yesterday's data by default on page load
         updateView('yesterday');
     </script>
 </body>
