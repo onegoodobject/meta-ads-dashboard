@@ -13,8 +13,10 @@ ad_account_id = os.environ.get('META_AD_ACCOUNT_ID')
 FacebookAdsApi.init(app_id, app_secret, access_token)
 account = AdAccount(ad_account_id)
 
-# 2. DEFINE THE PRESETS
-today = datetime.date.today()
+# 2. DEFINE THE PRESETS (LOCKED TO IST)
+utc_now = datetime.datetime.utcnow()
+ist_now = utc_now + datetime.timedelta(hours=5, minutes=30)
+today = ist_now.date()
 yesterday = today - datetime.timedelta(days=1)
 
 presets = {
