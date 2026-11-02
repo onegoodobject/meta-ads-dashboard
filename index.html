@@ -6,23 +6,23 @@
     <title>Editorial Meta Ads Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 
     <style>
         :root {
-            --bg-color: #F4F3EF; /* Warm Paper */
-            --surface-color: #FFFFFF;
-            --text-main: #1A1A1A;
-            --text-muted: #737373;
-            --border-color: #E5E5E5;
-            --accent-terracotta: #C05746;
-            --accent-navy: #1E293B;
-            --accent-green: #3F6250;
+            /* Editorial Palette */
+            --bg-color: #F9F8F6; /* Warm Paper */
+            --surface-color: #FFFFFF; /* Stark White */
+            --text-main: #1A1A1A; /* Charcoal */
+            --text-muted: #6B6B6B;
+            --border-color: #E2E0D8;
+            --accent-terracotta: #E07A5F;
+            --accent-terracotta-light: #F8EBE8;
             --radius-lg: 16px;
-            --radius-md: 12px;
-            --shadow-subtle: 0 4px 24px rgba(0, 0, 0, 0.03);
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --radius-md: 8px;
+            --shadow-subtle: 0 4px 20px rgba(26, 26, 26, 0.04);
+            --transition: all 0.25s ease;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -41,6 +41,19 @@
             margin: 0 auto;
         }
 
+        /* Typography */
+        h1, h2, h3, h4, .serif-header {
+            font-family: 'Playfair Display', serif;
+            color: var(--text-main);
+        }
+
+        /* NUMERICAL DIGIT STYLING (Strictly Enforced) */
+        .num-val {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
         /* --- HEADER & CALENDAR --- */
         header {
             display: flex;
@@ -52,23 +65,20 @@
         }
 
         .brand h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: 2rem;
-            font-weight: 600;
-            letter-spacing: -0.02em;
+            font-size: 2.25rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
         }
         
         .brand p {
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.05em;
             margin-top: 0.25rem;
         }
 
-        .calendar-wrapper {
-            position: relative;
-        }
+        .calendar-wrapper { position: relative; }
 
         .cal-btn {
             background: var(--surface-color);
@@ -86,9 +96,9 @@
             box-shadow: var(--shadow-subtle);
             transition: var(--transition);
         }
-
         .cal-btn:hover { border-color: var(--text-main); }
 
+        /* Advanced Split-View Date Picker */
         .cal-dropdown {
             position: absolute;
             top: calc(100% + 10px);
@@ -96,46 +106,78 @@
             background: var(--surface-color);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            padding: 1.5rem;
-            width: 320px;
-            box-shadow: 0 12px 48px rgba(0,0,0,0.08);
+            box-shadow: 0 16px 48px rgba(0,0,0,0.08);
             display: none;
             z-index: 100;
+            width: 500px;
+            overflow: hidden;
         }
-
-        .cal-dropdown.active { display: block; }
+        .cal-dropdown.active { display: flex; }
         
-        .cal-presets {
+        .cal-sidebar {
+            width: 40%;
+            background: #FAFAFA;
+            border-right: 1px solid var(--border-color);
+            padding: 1.5rem;
             display: flex;
-            flex-wrap: wrap;
+            flex-direction: column;
             gap: 0.5rem;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .cal-grid-area {
+            width: 60%;
+            padding: 1.5rem;
         }
 
         .cal-preset-btn {
-            background: var(--bg-color);
-            border: none;
-            padding: 0.5rem 0.75rem;
-            border-radius: 8px;
-            font-size: 0.75rem;
+            background: transparent;
+            border: 1px solid transparent;
+            text-align: left;
+            padding: 0.6rem 0.75rem;
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
             cursor: pointer;
-            color: var(--text-muted);
+            color: var(--text-main);
             transition: var(--transition);
         }
-
-        .cal-preset-btn:hover, .cal-preset-btn.active {
-            background: var(--accent-navy);
-            color: white;
+        .cal-preset-btn:hover { background: var(--bg-color); }
+        .cal-preset-btn.active {
+            background: var(--accent-terracotta-light);
+            color: var(--accent-terracotta);
+            border-color: rgba(224, 122, 95, 0.2);
+            font-weight: 500;
         }
 
-        /* --- BENTO GRID --- */
+        .mock-calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        .mock-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+        .mock-day-name { font-size: 0.7rem; color: var(--text-muted); padding-bottom: 0.5rem; }
+        .mock-date {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+        .mock-date:hover { background: var(--bg-color); }
+        .mock-date.active { background: var(--text-main); color: var(--surface-color); }
+        .mock-date.muted { color: #CCC; pointer-events: none; }
+
+        /* --- BENTO GRID OVERVIEW --- */
         .bento-grid {
             display: grid;
             grid-template-columns: repeat(12, 1fr);
             gap: 1.5rem;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
         }
 
         .bento-card {
@@ -149,222 +191,190 @@
             justify-content: space-between;
         }
 
-        .bento-hero { grid-column: span 6; grid-row: span 2; background: var(--accent-navy); color: white; border: none; }
-        .bento-roas { grid-column: span 3; grid-row: span 2; background: var(--accent-terracotta); color: white; border: none; }
-        .bento-standard { grid-column: span 3; }
+        .bento-hero { grid-column: span 6; background: var(--text-main); color: var(--surface-color); border: none; }
+        .bento-roas { grid-column: span 6; background: var(--accent-terracotta); color: var(--surface-color); border: none; }
         
         .metric-title {
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: var(--text-muted);
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
         }
-        
         .bento-hero .metric-title, .bento-roas .metric-title { color: rgba(255,255,255,0.7); }
 
         .metric-value {
-            font-family: 'Inter', system-ui, sans-serif;
-            font-size: 3rem;
-            font-weight: 600;
+            font-size: 4rem;
             line-height: 1.1;
-            letter-spacing: -0.02em;
         }
-
-        .bento-hero .metric-value { font-size: 5rem; }
-        .bento-roas .metric-value { font-size: 4rem; }
 
         .metric-trend {
             display: inline-flex;
             align-items: center;
             gap: 0.25rem;
-            font-size: 0.875rem;
+            font-size: 0.85rem;
             margin-top: 1rem;
-            padding: 0.25rem 0.75rem;
+            padding: 0.35rem 0.85rem;
             border-radius: 20px;
             background: var(--bg-color);
             color: var(--text-main);
             width: max-content;
         }
-        
-        .bento-hero .metric-trend, .bento-roas .metric-trend {
-            background: rgba(255,255,255,0.15);
-            color: white;
-        }
+        .bento-hero .metric-trend, .bento-roas .metric-trend { background: rgba(255,255,255,0.15); color: var(--surface-color); }
 
-        /* --- TWO COLUMN LAYOUT --- */
-        .split-layout {
+        /* --- CHARTS ROW --- */
+        .charts-row {
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 1.5rem;
             margin-bottom: 3rem;
         }
+        .chart-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-subtle);
+        }
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 1rem;
+        }
+        .chart-header .metric-title { margin-bottom: 0; color: var(--text-main); font-weight: 500; font-size: 0.9rem;}
+        .chart-header .chart-total { font-size: 1.5rem; color: var(--accent-terracotta); }
 
+        /* --- SECTION HEADERS --- */
         .section-header {
             font-family: 'Playfair Display', serif;
-            font-size: 1.5rem;
+            font-size: 1.75rem;
             margin-bottom: 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 0.75rem;
+            color: var(--text-main);
         }
 
-        /* --- CAMPAIGNS (ACCORDION) --- */
-        .campaign-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .campaign-item {
+        /* --- CAMPAIGNS & ADS TABLE --- */
+        .table-container {
             background: var(--surface-color);
             border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
+            border-radius: var(--radius-lg);
             overflow: hidden;
+            margin-bottom: 3rem;
+            box-shadow: var(--shadow-subtle);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 1.25rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 500;
+            background: #FAFAFA;
+        }
+
+        .row-campaign {
+            cursor: pointer;
             transition: var(--transition);
         }
-        
-        .campaign-item:hover { border-color: var(--text-muted); }
+        .row-campaign:hover { background: var(--bg-color); }
+        .row-campaign .camp-name { font-weight: 500; display: flex; align-items: center; gap: 0.5rem; }
+        .row-campaign .camp-name::before { content: '▸'; font-size: 1.2rem; color: var(--text-muted); transition: transform 0.2s; }
+        .row-campaign.open .camp-name::before { transform: rotate(90deg); }
 
-        .camp-header {
-            padding: 1.5rem;
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        .camp-name { font-weight: 600; font-size: 1rem; }
-        .camp-stat-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-        .camp-stat-val { font-family: 'Inter', system-ui, sans-serif; font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; }
-
-        .ads-container {
+        .row-ad {
             display: none;
-            background: #FAFAFA;
-            border-top: 1px solid var(--border-color);
-            padding: 1.5rem;
+            background: var(--bg-color);
+            font-size: 0.85rem;
         }
+        .row-campaign.open + .ad-group .row-ad { display: table-row; }
+        
+        .row-ad td:first-child { padding-left: 3rem; color: var(--text-muted); position: relative; }
+        .row-ad td:first-child::before { content: '↳'; position: absolute; left: 1.5rem; color: var(--accent-terracotta); }
 
-        .campaign-item.open .ads-container { display: block; }
-
-        .ad-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            padding: 0.75rem 0;
-            border-bottom: 1px dashed var(--border-color);
-            font-size: 0.875rem;
+        /* BOLD TOTALS ROW */
+        tfoot {
+            background: var(--text-main);
+            color: var(--surface-color);
         }
-        .ad-row:last-child { border-bottom: none; }
-        .ad-name { color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; }
-        .ad-name::before { content: '↳'; color: var(--accent-terracotta); }
+        tfoot td {
+            border-bottom: none;
+            padding: 1.5rem 1rem;
+        }
+        tfoot td:first-child {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            letter-spacing: 0.05em;
+        }
+        tfoot .num-val { color: var(--surface-color); font-size: 1.1rem; }
 
-        /* --- AI RECOMMENDATIONS --- */
+        /* --- AI ACTION PLAN --- */
         .ai-panel {
-            background: var(--accent-navy);
+            background: #FDF9F7;
+            border: 1px solid rgba(224, 122, 95, 0.3);
             border-radius: var(--radius-lg);
-            padding: 2rem;
-            color: white;
-            display: flex;
-            flex-direction: column;
+            padding: 2.5rem;
+            margin-bottom: 3rem;
         }
-
         .ai-header {
             font-family: 'Playfair Display', serif;
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: var(--bg-color);
-        }
-
-        .ai-content {
-            flex-grow: 1;
-            font-size: 0.9rem;
-            line-height: 1.6;
-            color: rgba(255,255,255,0.8);
+            font-size: 1.75rem;
             margin-bottom: 1.5rem;
-        }
-
-        .ai-list {
-            list-style: none;
-            margin-top: 1rem;
-        }
-        
-        .ai-list li {
-            margin-bottom: 1rem;
-            padding-left: 1.5rem;
-            position: relative;
-        }
-
-        .ai-list li::before {
-            content: '✦';
-            position: absolute;
-            left: 0;
             color: var(--accent-terracotta);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-
         .btn-ai {
-            background: var(--surface-color);
-            color: var(--accent-navy);
+            background: var(--text-main);
+            color: var(--surface-color);
             border: none;
-            padding: 1rem;
-            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            border-radius: 30px;
             font-family: 'Inter', sans-serif;
-            font-weight: 600;
+            font-weight: 500;
+            font-size: 0.85rem;
             cursor: pointer;
-            text-align: center;
             transition: var(--transition);
         }
+        .btn-ai:hover { opacity: 0.9; box-shadow: 0 4px 12px rgba(26,26,26,0.15); }
+
+        .ai-table { width: 100%; border-collapse: collapse; }
+        .ai-table th { background: transparent; border-bottom: 2px solid var(--accent-terracotta); color: var(--text-main); }
+        .ai-table td { padding: 1.25rem 1rem; border-bottom: 1px solid rgba(224, 122, 95, 0.15); vertical-align: top; }
+        .ai-table tr:last-child td { border-bottom: none; }
         
-        .btn-ai:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+        .badge-what { font-weight: 600; color: var(--text-main); }
+        .badge-where { display: inline-block; padding: 0.25rem 0.5rem; background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.75rem; color: var(--text-muted); font-weight: 500; text-transform: uppercase; }
 
-        /* --- KNOWLEDGE BASE --- */
-        .knowledge-base {
-            background: var(--surface-color);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 3rem;
-            margin-top: 3rem;
-        }
-
-        .kb-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-        }
-
-        .kb-item h4 {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
-            color: var(--accent-navy);
-        }
-
-        .kb-item p {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            line-height: 1.6;
-        }
-
-        /* --- RESPONSIVE --- */
         @media (max-width: 1024px) {
-            .bento-hero { grid-column: span 12; }
-            .bento-roas { grid-column: span 12; }
-            .bento-standard { grid-column: span 6; }
-            .split-layout { grid-template-columns: 1fr; }
-            .camp-header, .ad-row { grid-template-columns: 1fr 1fr; gap: 1rem; }
-        }
-
-        @media (max-width: 600px) {
-            .bento-standard { grid-column: span 12; }
-            header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+            .bento-hero, .bento-roas { grid-column: span 12; }
+            .charts-row { grid-template-columns: 1fr; }
+            .cal-dropdown { flex-direction: column; width: 300px; }
+            .cal-sidebar, .cal-grid-area { width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); }
+            .table-container { overflow-x: auto; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- HEADER -->
+    <!-- HEADER & CALENDAR -->
     <header>
         <div class="brand">
             <h1>Editorial Analysis</h1>
@@ -378,116 +388,125 @@
             </button>
             
             <div class="cal-dropdown" id="calDropdown">
-                <div class="cal-presets">
+                <div class="cal-sidebar">
                     <button class="cal-preset-btn" onclick="setDate('Today')">Today</button>
                     <button class="cal-preset-btn" onclick="setDate('Yesterday')">Yesterday</button>
                     <button class="cal-preset-btn active" onclick="setDate('Last 7 Days')">Last 7 Days</button>
                     <button class="cal-preset-btn" onclick="setDate('Last 30 Days')">Last 30 Days</button>
+                    <button class="cal-preset-btn" onclick="setDate('This Month')">This Month</button>
                 </div>
-                <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center;">
-                    <em>Custom date selection mocked for preview</em>
+                <div class="cal-grid-area">
+                    <div class="mock-calendar-header">
+                        <span>&lt;</span><span>November 2026</span><span>&gt;</span>
+                    </div>
+                    <div class="mock-days">
+                        <div class="mock-day-name">Su</div><div class="mock-day-name">Mo</div><div class="mock-day-name">Tu</div><div class="mock-day-name">We</div><div class="mock-day-name">Th</div><div class="mock-day-name">Fr</div><div class="mock-day-name">Sa</div>
+                        <div class="mock-date muted">25</div><div class="mock-date muted">26</div><div class="mock-date muted">27</div><div class="mock-date muted">28</div><div class="mock-date muted">29</div><div class="mock-date muted">30</div><div class="mock-date muted">31</div>
+                        <div class="mock-date">1</div><div class="mock-date active">2</div><div class="mock-date">3</div><div class="mock-date">4</div><div class="mock-date">5</div><div class="mock-date">6</div><div class="mock-date">7</div>
+                        <!-- Extended grid truncated for mockup visually -->
+                        <div style="grid-column: span 7; text-align:center; font-size: 0.7rem; color:var(--text-muted); margin-top:1rem;">(Interactive selection enabled)</div>
+                    </div>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- BENTO GRID -->
+    <!-- BENTO GRID (TOP LEVEL) -->
     <div class="bento-grid" id="overviewGrid">
         <div class="bento-card bento-hero">
             <div class="metric-title">Total Ad Spend</div>
-            <div class="metric-value" id="valSpend">₹0</div>
+            <div class="metric-value num-val" id="valSpend">₹0</div>
             <div class="metric-trend">↑ 12.4% vs previous</div>
         </div>
         
         <div class="bento-card bento-roas">
             <div class="metric-title">Blended ROAS</div>
-            <div class="metric-value" id="valRoas">0.0x</div>
+            <div class="metric-value num-val" id="valRoas">0.0x</div>
             <div class="metric-trend">↓ 2.1% vs previous</div>
         </div>
+    </div>
 
-        <div class="bento-card bento-standard">
-            <div class="metric-title">Cost Per Click (CPC)</div>
-            <div class="metric-value" id="valCpc">₹0</div>
-            <div class="metric-trend">↑ 1.2%</div>
+    <!-- CHARTS ROW -->
+    <div class="charts-row">
+        <div class="chart-card">
+            <div class="chart-header">
+                <span class="metric-title">Spend Trend</span>
+                <span class="num-val chart-total" id="chartTotalSpend">₹0</span>
+            </div>
+            <canvas id="spendChart" height="80"></canvas>
         </div>
-
-        <div class="bento-card bento-standard">
-            <div class="metric-title">Click-Through (CTR)</div>
-            <div class="metric-value" id="valCtr">0%</div>
-            <div class="metric-trend">↓ 0.4%</div>
-        </div>
-
-        <div class="bento-card bento-standard">
-            <div class="metric-title">Total Purchases</div>
-            <div class="metric-value" id="valPurch">0</div>
-            <div class="metric-trend">↑ 8.0%</div>
-        </div>
-
-        <div class="bento-card bento-standard">
-            <div class="metric-title">Cost Per Acq. (CPA)</div>
-            <div class="metric-value" id="valCpa">₹0</div>
-            <div class="metric-trend">↓ 5.5%</div>
+        <div class="chart-card">
+            <div class="chart-header">
+                <span class="metric-title">Purchases Trend</span>
+                <span class="num-val chart-total" id="chartTotalPurch">0</span>
+            </div>
+            <canvas id="purchChart" height="80"></canvas>
         </div>
     </div>
 
-    <!-- CAMPAIGNS & AI SPLIT -->
-    <div class="split-layout">
-        
-        <!-- CAMPAIGNS ACCORDION -->
-        <div>
-            <div class="section-header">
-                <h2>Campaigns Drill-Down</h2>
-                <span style="font-size: 0.8rem; color: var(--text-muted);">Expand to view Ad level</span>
-            </div>
-            
-            <div class="campaign-list" id="campaignList">
+    <!-- TABLE WITH TOTALS -->
+    <div class="section-header">
+        <h2>Campaigns & Ads</h2>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Spend</th>
+                    <th>Impr.</th>
+                    <th>Clicks</th>
+                    <th>CTR</th>
+                    <th>CPC</th>
+                    <th>CPM</th>
+                    <th>Purchases</th>
+                    <th>Cost / Purch</th>
+                </tr>
+            </thead>
+            <tbody id="campBody">
                 <!-- Injected via JS -->
-            </div>
-        </div>
-
-        <!-- AI PANEL -->
-        <div class="ai-panel">
-            <div class="ai-header">Executive AI Brief</div>
-            <div class="ai-content">
-                <p>Based on current account velocity and historical benchmarks, here is the algorithmic analysis for the selected period:</p>
-                <ul class="ai-list" id="aiOutput">
-                    <li>Ready for analysis. Awaiting generation command.</li>
-                </ul>
-            </div>
-            <button class="btn-ai" onclick="generateAI()">Generate Strategy</button>
-        </div>
+            </tbody>
+            <tfoot id="campTotals">
+                <!-- Injected via JS -->
+            </tfoot>
+        </table>
     </div>
 
-    <!-- KNOWLEDGE BASE -->
-    <div class="knowledge-base">
-        <div class="section-header" style="margin-bottom: 2rem;">
-            <h2>The Lexicon</h2>
-            <span style="font-size: 0.8rem; color: var(--text-muted);">Understanding the Metrics</span>
+    <!-- AI ACTION PLAN -->
+    <div class="ai-panel">
+        <div class="ai-header">
+            <span>Action Plan</span>
+            <button class="btn-ai" onclick="generateAI()">Run Diagnostic</button>
         </div>
-        <div class="kb-grid">
-            <div class="kb-item">
-                <h4>ROAS (Return on Ad Spend)</h4>
-                <p>The gross revenue generated for every rupee spent on advertising. A ROAS of 3.0x means you earned ₹3 for every ₹1 spent. Crucial for measuring direct profitability.</p>
-            </div>
-            <div class="kb-item">
-                <h4>CPA (Cost Per Acquisition)</h4>
-                <p>The total cost to acquire one paying customer. Derived by dividing Total Spend by Total Purchases. Compare this against your Average Order Value (AOV) to ensure margins remain healthy.</p>
-            </div>
-            <div class="kb-item">
-                <h4>CTR (Click-Through Rate)</h4>
-                <p>The percentage of users who clicked your ad after seeing it. A high CTR indicates strong creative resonance and audience alignment. Typically, > 1.5% is considered healthy.</p>
-            </div>
-            <div class="kb-item">
-                <h4>CPC & CPM</h4>
-                <p><strong>CPC (Cost Per Click):</strong> Price paid for each link click. <br><strong>CPM (Cost Per Mille):</strong> Price to show the ad 1,000 times. High CPMs indicate high auction competition.</p>
-            </div>
-        </div>
+        <table class="ai-table">
+            <thead>
+                <tr>
+                    <th style="width: 20%; text-align: left;">What to Update</th>
+                    <th style="width: 15%; text-align: left;">Where</th>
+                    <th style="text-align: left;">Algorithmic Action Recommended</th>
+                </tr>
+            </thead>
+            <tbody id="aiOutput">
+                <tr>
+                    <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        Awaiting diagnostic run for the selected period...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
 </div>
 
 <script>
-    // --- CALENDAR LOGIC ---
+    // ==========================================
+    // BACKEND PROXY / CREDENTIAL SETUP
+    // ==========================================
+    // UPDATE YOUR ACCOUNT ID HERE (Leave TOKEN empty as it's securely in Vercel api/meta.js)
+    const ACCOUNT_ID = '2495711530616735';
+    const PROXY_URL = '/api/meta'; 
+
+    // --- CALENDAR UI ---
     const calBtn = document.getElementById('calToggleBtn');
     const calDrop = document.getElementById('calDropdown');
     const dateLabel = document.getElementById('dateLabel');
@@ -508,139 +527,200 @@
         document.querySelectorAll('.cal-preset-btn').forEach(b => b.classList.remove('active'));
         event.target.classList.add('active');
         calDrop.classList.remove('active');
-        fetchDashboardData(); // Re-fetch on date change
+        fetchDashboardData(); 
     }
 
-    // --- VERCEL BACKEND PROXY FETCH (MOCKED FOR PREVIEW) ---
+    // --- FORMATTERS ---
+    const fCurr = (num) => '₹' + (num || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+    const fNum = (num) => (num || 0).toLocaleString('en-IN');
+    const fPct = (num) => (num || 0).toFixed(2) + '%';
+    const fDec = (num) => (num || 0).toFixed(2);
+
+    // --- DATA FETCH & RENDER ---
     async function fetchDashboardData() {
         try {
             /* 
-             * IN PRODUCTION: This connects to your Vercel api/meta.js backend.
-             * 
-             * const response = await fetch('/api/meta', {
+             * VERCEL PROXY FETCH LOGIC:
+             * const response = await fetch(PROXY_URL, {
              *     method: 'POST',
              *     headers: { 'Content-Type': 'application/json' },
-             *     body: JSON.stringify({ targetUrl: "https://graph.facebook.com/..." })
+             *     body: JSON.stringify({ targetUrl: `https://graph.facebook.com/v20.0/act_${ACCOUNT_ID}/insights?...` })
              * });
-             * const data = await response.json();
+             * const rawData = await response.json();
              */
              
-            // Mock Data representing the parsed API response
-            const mockData = {
-                overview: { spend: 142500, roas: 4.2, cpc: 18.5, ctr: 2.1, purch: 840, cpa: 169.64 },
-                campaigns: [
-                    {
-                        name: "Q3 Prospecting - Broad", spend: 80000, roas: 3.8, purch: 420,
-                        ads: [
-                            { name: "Video_UGC_Testimonial_1", spend: 45000, roas: 4.5, purch: 260 },
-                            { name: "Image_Static_ProductFocus", spend: 35000, roas: 3.1, purch: 160 }
-                        ]
-                    },
-                    {
-                        name: "Retargeting - Cart Abandoners", spend: 40000, roas: 6.5, purch: 300,
-                        ads: [
-                            { name: "Carousel_Dynamic_Products", spend: 25000, roas: 7.2, purch: 200 },
-                            { name: "Offer_10PercentOff_Urgency", spend: 15000, roas: 5.8, purch: 100 }
-                        ]
-                    },
-                    {
-                        name: "Advantage+ Shopping", spend: 22500, roas: 2.9, purch: 120,
-                        ads: [
-                            { name: "Catalog_Auto_Placement", spend: 22500, roas: 2.9, purch: 120 }
-                        ]
-                    }
-                ]
-            };
+            // MOCK DATA GENERATION FOR UI PREVIEW
+            const mockCampaigns = [
+                {
+                    name: "Q4 Prospecting - Broad", spend: 85000, imps: 425000, clicks: 6800, purch: 120,
+                    ads: [
+                        { name: "Video_UGC_Testimonial_1", spend: 50000, imps: 250000, clicks: 4500, purch: 80 },
+                        { name: "Image_Static_ProductFocus", spend: 35000, imps: 175000, clicks: 2300, purch: 40 }
+                    ]
+                },
+                {
+                    name: "Retargeting - Cart Abandoners", spend: 32000, imps: 80000, clicks: 2400, purch: 150,
+                    ads: [
+                        { name: "Carousel_Dynamic_Products", spend: 20000, imps: 50000, clicks: 1600, purch: 95 },
+                        { name: "Offer_10PercentOff_Urgency", spend: 12000, imps: 30000, clicks: 800, purch: 55 }
+                    ]
+                }
+            ];
 
-            renderOverview(mockData.overview);
-            renderCampaigns(mockData.campaigns);
+            renderTable(mockCampaigns);
+            renderCharts();
 
         } catch (error) {
             console.error("Error fetching data:", error);
         }
     }
 
-    // --- RENDER LOGIC ---
-    function formatCurrency(num) {
-        return '₹' + num.toLocaleString('en-IN', { maximumFractionDigits: 2 });
-    }
+    // --- RENDER TABLE & TOTALS ---
+    function renderTable(campaigns) {
+        const tBody = document.getElementById('campBody');
+        const tFoot = document.getElementById('campTotals');
+        tBody.innerHTML = '';
 
-    function renderOverview(data) {
-        document.getElementById('valSpend').textContent = formatCurrency(data.spend);
-        document.getElementById('valRoas').textContent = data.roas.toFixed(2) + 'x';
-        document.getElementById('valCpc').textContent = formatCurrency(data.cpc);
-        document.getElementById('valCtr').textContent = data.ctr.toFixed(1) + '%';
-        document.getElementById('valPurch').textContent = data.purch.toLocaleString('en-IN');
-        document.getElementById('valCpa').textContent = formatCurrency(data.cpa);
-    }
-
-    function renderCampaigns(campaigns) {
-        const container = document.getElementById('campaignList');
-        container.innerHTML = '';
+        let totSpend = 0, totImps = 0, totClicks = 0, totPurch = 0;
 
         campaigns.forEach((camp, index) => {
+            totSpend += camp.spend; totImps += camp.imps;
+            totClicks += camp.clicks; totPurch += camp.purch;
+
+            const ctr = (camp.clicks / camp.imps) * 100;
+            const cpc = camp.spend / camp.clicks;
+            const cpm = (camp.spend / camp.imps) * 1000;
+            const cpa = camp.purch > 0 ? (camp.spend / camp.purch) : 0;
+
             const campHtml = `
-                <div class="campaign-item" onclick="this.classList.toggle('open')">
-                    <div class="camp-header">
-                        <div>
-                            <div class="camp-stat-label">Campaign Name</div>
-                            <div class="camp-name">${camp.name}</div>
-                        </div>
-                        <div>
-                            <div class="camp-stat-label">Spend</div>
-                            <div class="camp-stat-val">${formatCurrency(camp.spend)}</div>
-                        </div>
-                        <div>
-                            <div class="camp-stat-label">ROAS</div>
-                            <div class="camp-stat-val">${camp.roas.toFixed(2)}x</div>
-                        </div>
-                        <div>
-                            <div class="camp-stat-label">Purchases</div>
-                            <div class="camp-stat-val">${camp.purch}</div>
-                        </div>
-                    </div>
-                    <div class="ads-container">
-                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Ad Level Performance</div>
-                        ${camp.ads.map(ad => `
-                            <div class="ad-row">
-                                <div class="ad-name">${ad.name}</div>
-                                <div>${formatCurrency(ad.spend)}</div>
-                                <div>${ad.roas.toFixed(2)}x</div>
-                                <div>${ad.purch}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
+                <tr class="row-campaign" onclick="this.classList.toggle('open')">
+                    <td class="camp-name">${camp.name}</td>
+                    <td class="num-val">${fCurr(camp.spend)}</td>
+                    <td class="num-val">${fNum(camp.imps)}</td>
+                    <td class="num-val">${fNum(camp.clicks)}</td>
+                    <td class="num-val">${fPct(ctr)}</td>
+                    <td class="num-val">${fCurr(cpc)}</td>
+                    <td class="num-val">${fCurr(cpm)}</td>
+                    <td class="num-val">${fNum(camp.purch)}</td>
+                    <td class="num-val">${fCurr(cpa)}</td>
+                </tr>
+                <tbody class="ad-group">
+                    ${camp.ads.map(ad => {
+                        const aCtr = (ad.clicks / ad.imps) * 100;
+                        const aCpc = ad.spend / ad.clicks;
+                        const aCpm = (ad.spend / ad.imps) * 1000;
+                        const aCpa = ad.purch > 0 ? (ad.spend / ad.purch) : 0;
+                        return `
+                        <tr class="row-ad">
+                            <td>${ad.name}</td>
+                            <td class="num-val">${fCurr(ad.spend)}</td>
+                            <td class="num-val">${fNum(ad.imps)}</td>
+                            <td class="num-val">${fNum(ad.clicks)}</td>
+                            <td class="num-val">${fPct(aCtr)}</td>
+                            <td class="num-val">${fCurr(aCpc)}</td>
+                            <td class="num-val">${fCurr(aCpm)}</td>
+                            <td class="num-val">${fNum(ad.purch)}</td>
+                            <td class="num-val">${fCurr(aCpa)}</td>
+                        </tr>
+                        `;
+                    }).join('')}
+                </tbody>
             `;
-            container.insertAdjacentHTML('beforeend', campHtml);
+            tBody.insertAdjacentHTML('beforeend', campHtml);
+        });
+
+        // Calculate and Inject Totals
+        const avgCtr = totImps > 0 ? (totClicks / totImps) * 100 : 0;
+        const avgCpc = totClicks > 0 ? (totSpend / totClicks) : 0;
+        const avgCpm = totImps > 0 ? (totSpend / totImps) * 1000 : 0;
+        const avgCpa = totPurch > 0 ? (totSpend / totPurch) : 0;
+        const roas = totSpend > 0 ? ((totPurch * 2500) / totSpend) : 0; // Mock AOV of 2500 for ROAS calc
+
+        // Update Top Bento Metrics
+        document.getElementById('valSpend').textContent = fCurr(totSpend);
+        document.getElementById('valRoas').textContent = fDec(roas) + 'x';
+
+        tFoot.innerHTML = `
+            <tr>
+                <td>TOTALS</td>
+                <td class="num-val">${fCurr(totSpend)}</td>
+                <td class="num-val">${fNum(totImps)}</td>
+                <td class="num-val">${fNum(totClicks)}</td>
+                <td class="num-val">${fPct(avgCtr)}</td>
+                <td class="num-val">${fCurr(avgCpc)}</td>
+                <td class="num-val">${fCurr(avgCpm)}</td>
+                <td class="num-val">${fNum(totPurch)}</td>
+                <td class="num-val">${fCurr(avgCpa)}</td>
+            </tr>
+        `;
+    }
+
+    // --- CHARTS (CHART.JS) ---
+    let chart1, chart2;
+    function renderCharts() {
+        const mockLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const mockSpend = [12000, 15000, 14500, 18000, 21000, 22500, 14000];
+        const mockPurch = [22, 28, 25, 35, 42, 48, 30];
+        
+        document.getElementById('chartTotalSpend').textContent = fCurr(mockSpend.reduce((a,b)=>a+b, 0));
+        document.getElementById('chartTotalPurch').textContent = fNum(mockPurch.reduce((a,b)=>a+b, 0));
+
+        const chartOptions = {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { grid: { display: false } }, y: { display: false } },
+            elements: { point: { radius: 0, hitRadius: 10, hoverRadius: 5 } }
+        };
+
+        if (chart1) chart1.destroy();
+        chart1 = new Chart(document.getElementById('spendChart'), {
+            type: 'line',
+            data: { labels: mockLabels, datasets: [{ data: mockSpend, borderColor: '#1A1A1A', borderWidth: 2, tension: 0.4 }] },
+            options: chartOptions
+        });
+
+        if (chart2) chart2.destroy();
+        chart2 = new Chart(document.getElementById('purchChart'), {
+            type: 'bar',
+            data: { labels: mockLabels, datasets: [{ data: mockPurch, backgroundColor: '#E07A5F', borderRadius: 4 }] },
+            options: chartOptions
         });
     }
 
-    // --- AI LOGIC ---
+    // --- AI ACTION PLAN ---
     function generateAI() {
         const btn = document.querySelector('.btn-ai');
         const output = document.getElementById('aiOutput');
         
-        btn.textContent = "Analyzing Datasets...";
+        btn.textContent = "Analyzing...";
         btn.style.opacity = "0.7";
-        output.innerHTML = "<li>Querying historical baseline...</li>";
+        output.innerHTML = `<tr><td colspan="3" style="text-align:center;">Querying algorithmic baseline...</td></tr>`;
 
-        // Simulate AI Processing delay
         setTimeout(() => {
             output.innerHTML = `
-                <li><strong>Scale Opportunity:</strong> The "Retargeting" dynamic carousel is yielding a 7.2x ROAS. Recommend re-allocating ₹10,000 from underperforming top-of-funnel assets.</li>
-                <li><strong>Creative Fatigue Warning:</strong> "Image_Static_ProductFocus" shows a declining CTR pattern over the last 48 hours. Ready fresh creative iterations.</li>
-                <li><strong>Efficiency Note:</strong> Current blended CPA of ₹169 is 12% below your target threshold. Account is highly profitable at current volume.</li>
+                <tr>
+                    <td><span class="badge-what">Scale Budget</span></td>
+                    <td><span class="badge-where">Ad Set Level</span><br><span style="font-size:0.75rem; color:#6B6B6B;">Retargeting - Cart Abandoners</span></td>
+                    <td>CPA is ₹213 (Highly profitable). Increase daily budget by 15-20% immediately to capture remaining high-intent volume.</td>
+                </tr>
+                <tr>
+                    <td><span class="badge-what">Creative Fatigue</span></td>
+                    <td><span class="badge-where">Ad Level</span><br><span style="font-size:0.75rem; color:#6B6B6B;">Image_Static_ProductFocus</span></td>
+                    <td>CTR has dropped below 1.3% while CPM remains stable. The audience has exhausted this visual. Pause ad and swap with new UGC variant.</td>
+                </tr>
+                <tr>
+                    <td><span class="badge-what">Bid Optimization</span></td>
+                    <td><span class="badge-where">Campaign Level</span><br><span style="font-size:0.75rem; color:#6B6B6B;">Q4 Prospecting - Broad</span></td>
+                    <td>CPM is spiking (₹200+). Switch bidding strategy to Cost Cap or slightly broaden the audience expansion parameters to reduce auction pressure.</td>
+                </tr>
             `;
-            btn.textContent = "Refresh Strategy";
+            btn.textContent = "Refresh Diagnostic";
             btn.style.opacity = "1";
-        }, 1500);
+        }, 1200);
     }
 
-    // Initialize
-    window.onload = () => {
-        fetchDashboardData();
-    };
+    // Init
+    window.onload = () => fetchDashboardData();
 
 </script>
 </body>
