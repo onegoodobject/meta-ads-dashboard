@@ -1,755 +1,484 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>One Good Object — Meta Ads</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#08080f;--surface:rgba(255,255,255,0.03);--border:rgba(255,255,255,0.08);
-  --orange:#f97316;--od:rgba(249,115,22,0.10);--ob:rgba(249,115,22,0.3);
-  --text:#f1f5f9;--muted:#64748b;--good:#22c55e;--warn:#f59e0b;--bad:#ef4444;
-}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meta Command Center | Spatial UI</title>
+    
+    <!-- Fonts: Rajdhani for Sci-Fi Headers, Inter for Data -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-/* ── DASH LAYOUT ── */
-#dash{padding:24px 30px;max-width:1480px;margin:0 auto}
-.topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:14px}
-.ttitle{font-family:'Space Mono',monospace;font-size:19px;font-weight:700}
-.tsub{font-size:12px;color:var(--muted);margin-top:3px}
-.badge{font-size:10px;letter-spacing:4px;color:var(--orange);text-transform:uppercase;margin-bottom:14px}
-.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.btn-g{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:7px 16px;color:#94a3b8;font-size:13px;cursor:pointer;transition:all .15s}
-.btn-g:hover{border-color:rgba(255,255,255,0.2);color:var(--text)}
-.btn-g.active-compare{background:var(--od);border-color:var(--ob);color:var(--orange)}
-.btn-o{background:var(--orange);border:none;border-radius:8px;padding:9px 20px;color:#08080f;font-size:13px;font-weight:700;cursor:pointer;font-family:'Space Mono',monospace}
-.btn-o:disabled{opacity:.5;cursor:not-allowed}
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        scifi: ['Rajdhani', 'sans-serif'],
+                        data: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        neon: {
+                            cyan: '#00f3ff',
+                            magenta: '#ff00ff',
+                            purple: '#bc13fe',
+                            green: '#00ff66',
+                            yellow: '#ffeb3b',
+                            red: '#ff2a2a'
+                        },
+                        glass: {
+                            100: 'rgba(255, 255, 255, 0.1)',
+                            50: 'rgba(255, 255, 255, 0.05)',
+                            10: 'rgba(255, 255, 255, 0.01)',
+                            dark: 'rgba(5, 5, 15, 0.4)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 
-/* ── DATE PICKERS ── */
-.dpicker-row{display:flex;align-items:center;gap:8px;margin-bottom:24px;flex-wrap:wrap}
-.dpicker-row .vs-lbl{font-size:12px;color:var(--muted);font-weight:600}
-.dw{position:relative}
-.dbtn{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:7px 14px;color:var(--text);font-size:13px;cursor:pointer;min-width:170px;white-space:nowrap}
-.dbtn:hover,.dbtn.cmp-active{border-color:var(--ob)}
-.dbtn.cmp-active{background:var(--od)}
-.cal-icon{width:13px;height:13px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.ddrop{display:none;position:absolute;top:calc(100% + 6px);left:0;background:#0d1520;border:1px solid var(--border);border-radius:10px;z-index:300;min-width:265px;box-shadow:0 20px 40px rgba(0,0,0,.8)}
-.ddrop.open{display:flex;flex-direction:column}
-.preset-list{padding:6px 0;border-bottom:1px solid var(--border)}
-.pi{padding:8px 16px;font-size:13px;cursor:pointer;color:#94a3b8;transition:background .1s}
-.pi:hover,.pi.sel{background:var(--od);color:var(--orange)}
-.calwrap{padding:14px}
-.cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.cal-nav button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:17px;padding:2px 7px;border-radius:4px;line-height:1}
-.cal-nav button:hover{color:var(--text)}
-.cal-mth{font-size:13px;font-weight:600}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
-.cal-dow{font-size:10px;color:var(--muted);padding:3px 0;font-weight:600}
-.cd{font-size:12px;padding:5px 2px;border-radius:4px;cursor:pointer;color:#94a3b8;display:flex;align-items:center;justify-content:center;min-height:26px}
-.cd:hover:not(.emp):not(.fut){background:rgba(255,255,255,0.08);color:var(--text)}
-.cd.tod{color:var(--orange);font-weight:700}
-.cd.sel{background:var(--orange)!important;color:#08080f!important;font-weight:700}
-.cd.inr{background:var(--od);color:var(--orange)}
-.cd.emp,.cd.fut{opacity:.2;pointer-events:none}
-.cal-hint{font-size:11px;color:var(--muted);text-align:center;margin-top:7px;min-height:15px}
-.cal-apply{width:100%;margin-top:8px;background:var(--orange);color:#08080f;border:none;border-radius:6px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Space Mono',monospace;display:none}
+    <style>
+        :root {
+            --cyan: #00f3ff;
+            --magenta: #ff00ff;
+            --purple: #bc13fe;
+        }
 
-/* ── TABS ── */
-.tabs{display:flex;gap:7px;margin-bottom:24px;flex-wrap:wrap}
-.tab{padding:7px 17px;border-radius:6px;cursor:pointer;font-size:13px;border:1px solid transparent;color:var(--muted);transition:all .15s}
-.tab.active{background:var(--od);color:var(--orange);border-color:var(--ob)}
-.tab:hover:not(.active){color:var(--text)}
+        body {
+            background-color: #02010a;
+            margin: 0;
+            overflow-x: hidden;
+            /* Holographic Grid Background */
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            color: #ffffff;
+        }
 
-/* ── STATS GRID ── */
-.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px}
-.sc{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 18px}
-.sc.acc{background:var(--od);border-color:var(--ob)}
-.sc-lbl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
-.sc-val{font-family:'Space Mono',monospace;font-size:20px;font-weight:700}
-.sc.acc .sc-val{color:var(--orange)}
-.sc-hint{font-size:11px;margin-top:4px}
-.sc-hint.g{color:var(--good)}.sc-hint.w{color:var(--warn)}.sc-hint.b{color:var(--bad)}
-.sc-cmp{font-size:11px;margin-top:3px;display:flex;align-items:center;gap:4px}
-.delta-up{color:var(--good)}.delta-dn{color:var(--bad)}.delta-neu{color:var(--muted)}
+        /* Ambient Glowing Background Orbs */
+        .ambient-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.4;
+            animation: float-orb 20s infinite alternate cubic-bezier(0.45, 0.05, 0.55, 0.95);
+            z-index: 0;
+            pointer-events: none;
+        }
+        .orb-1 { width: 60vw; height: 60vw; background: var(--purple); top: -20%; left: -10%; }
+        .orb-2 { width: 50vw; height: 50vw; background: var(--magenta); bottom: -10%; right: -10%; animation-delay: -5s; animation-direction: alternate-reverse; }
+        .orb-3 { width: 40vw; height: 40vw; background: var(--cyan); top: 30%; left: 30%; animation-delay: -10s; opacity: 0.3; }
 
-/* ── TABLE ── */
-.twrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.thead-bar{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
-.thead-title{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
-.active-pill{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:20px;padding:2px 11px;font-size:11px;color:var(--good)}
-.tscroll{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:12px;min-width:1100px}
-thead tr{border-bottom:1px solid var(--border)}
-th{padding:10px 13px;text-align:left;color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;font-weight:600}
-td{padding:10px 13px;border-bottom:1px solid rgba(255,255,255,0.03);white-space:nowrap;font-family:'Space Mono',monospace;font-size:12px}
-tbody tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:rgba(255,255,255,0.02)}
-tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:700;background:rgba(249,115,22,0.04)}
-.td-name{font-family:'DM Sans',sans-serif;max-width:180px;overflow:hidden;text-overflow:ellipsis;font-weight:500}
-.td-obj{font-family:'DM Sans',sans-serif;font-size:11px}
-.obj-pill{display:inline-block;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:20px;padding:2px 9px;color:#818cf8;font-size:10px;white-space:nowrap}
-.td-spend{color:var(--orange)}
-.cg{color:var(--good)}.cw{color:var(--warn)}.cb{color:var(--bad)}
-.ec{padding:40px;text-align:center;color:var(--muted);font-family:'DM Sans',sans-serif}
+        @keyframes float-orb {
+            0% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(5%, 10%) scale(1.1); }
+            66% { transform: translate(-5%, 5%) scale(0.9); }
+            100% { transform: translate(10%, -5%) scale(1.2); }
+        }
 
-/* ── CHARTS ── */
-.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
-@media(max-width:700px){.charts-grid{grid-template-columns:1fr}}
-.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px}
-.panel-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+        /* HUD Scanner Line */
+        .scanner-line {
+            position: fixed;
+            width: 100vw;
+            height: 2px;
+            background: rgba(0, 243, 255, 0.5);
+            box-shadow: 0 0 20px 2px var(--cyan);
+            top: 0;
+            left: 0;
+            z-index: 100;
+            pointer-events: none;
+            animation: scan 6s linear infinite;
+            opacity: 0;
+        }
 
-/* ── BENCHMARK ── */
-.bench-sec{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin:22px 0 8px 2px}
-.brow{display:grid;grid-template-columns:200px 1fr 130px 85px;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:12px 16px;margin-bottom:7px}
-.bm{font-size:13px;font-weight:500}
-.bd{font-size:11px;color:var(--muted)}
-.bv{font-family:'Space Mono',monospace;font-size:13px;font-weight:700}
-.bs{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;justify-content:flex-end}
-.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.sg{color:var(--good)}.dg{background:var(--good)}
-.sw{color:var(--warn)}.dw{background:var(--warn)}
-.sb{color:var(--bad)}.db{background:var(--bad)}
-.si{color:var(--muted)}.di{background:var(--muted)}
+        @keyframes scan {
+            0% { top: -10%; opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { top: 110%; opacity: 0; }
+        }
 
-/* ── GUIDE ── */
-.guide-intro{background:var(--od);border:1px solid var(--ob);border-radius:10px;padding:20px 24px;margin-bottom:24px}
-.guide-intro p{font-size:14px;color:#cbd5e1;line-height:1.7}
-.guide-sec{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin:24px 0 10px 2px}
-.gcard{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-bottom:10px}
-.gcard-title{font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text)}
-.gcard-body{font-size:13px;color:#94a3b8;line-height:1.65}
-.gcard-body strong{color:var(--text)}
-.gcard-body .gbench{display:inline-block;margin-top:6px;font-size:12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:5px;padding:4px 10px;color:var(--muted)}
-.gcard-body .gbench span{color:var(--orange)}
+        /* Glassmorphism Panels */
+        .glass-panel {
+            background: linear-gradient(145deg, var(--glass-dark), rgba(10, 10, 25, 0.2));
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-top: 1px solid var(--glass-100);
+            border-left: 1px solid var(--glass-50);
+            border-right: 1px solid transparent;
+            border-bottom: 1px solid transparent;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.02);
+            position: relative;
+            overflow: hidden;
+        }
 
-/* ── AI ── */
-.ai-intro{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:18px}
-.ai-intro p{font-size:14px;color:var(--muted);margin-bottom:14px}
-#aiOut{display:none;background:var(--od);border:1px solid var(--ob);border-radius:10px;padding:24px}
-#aiLbl{font-size:10px;color:var(--orange);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
-#aiTxt{font-size:14px;color:#cbd5e1;line-height:1.85;white-space:pre-wrap}
+        /* Panel Inner Glow */
+        .glass-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at top left, rgba(255,255,255,0.05), transparent 50%);
+            pointer-events: none;
+        }
 
-/* ── SPINNER ── */
-.sp{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.12);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite;margin-right:5px;vertical-align:middle}
-@keyframes spin{to{transform:rotate(360deg)}}
-</style>
+        /* 3D Tilt Card Base */
+        .tilt-card {
+            transform-style: preserve-3d;
+            will-change: transform;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Neon Texts */
+        .neon-cyan { text-shadow: 0 0 10px rgba(0,243,255,0.8), 0 0 20px rgba(0,243,255,0.4); }
+        .neon-magenta { text-shadow: 0 0 10px rgba(255,0,255,0.8), 0 0 20px rgba(255,0,255,0.4); }
+        .neon-purple { text-shadow: 0 0 10px rgba(188,19,254,0.8), 0 0 20px rgba(188,19,254,0.4); }
+        .neon-green { text-shadow: 0 0 10px rgba(0,255,102,0.8), 0 0 20px rgba(0,255,102,0.4); }
+
+        /* Custom Scrollbar for insights */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 243, 255, 0.3); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 243, 255, 0.6); }
+
+        /* Blink Animation */
+        .animate-blink { animation: blink 2s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    </style>
 </head>
-<body>
+<body class="min-h-screen text-gray-200 antialiased font-data selection:bg-neon-cyan selection:text-black">
 
-<!-- DASHBOARD -->
-<div id="dash">
-  <div class="topbar">
-    <div>
-      <div class="badge">One Good Object</div>
-      <div class="ttitle mono">Meta Ads Dashboard</div>
-      <div class="tsub" id="lastFetched">—</div>
-    </div>
-    <div class="actions">
-      <button class="btn-g" id="cmpBtn" onclick="toggleCompare()">⇄ Compare</button>
-      <button class="btn-g" onclick="loadData()"><span id="rfSp" style="display:none" class="sp"></span>Refresh</button>
-    </div>
-  </div>
+    <!-- Ambient Background Elements -->
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <div class="ambient-orb orb-3"></div>
+    <div class="scanner-line"></div>
 
-  <!-- DATE ROW -->
-  <div class="dpicker-row">
-    <!-- PRIMARY DATE -->
-    <div class="dw" id="dWrap1">
-      <div class="dbtn" onclick="toggleCal(1)">
-        <svg class="cal-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <span id="dLabel1">Yesterday</span>
-      </div>
-      <div class="ddrop" id="dDrop1">
-        <div class="preset-list" id="plist1"></div>
-        <div class="calwrap">
-          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Custom Date / Range</div>
-          <div class="cal-nav">
-            <button onclick="mth(1,-1)">‹</button>
-            <span class="cal-mth" id="calMth1"></span>
-            <button onclick="mth(1,1)">›</button>
-          </div>
-          <div class="cal-grid" id="calGrid1"></div>
-          <div class="cal-hint" id="calHint1">Click date or range start</div>
-          <button class="cal-apply" id="calApply1" onclick="applyCustom(1)">APPLY →</button>
-        </div>
-      </div>
-    </div>
-    <!-- COMPARE DATE (hidden by default) -->
-    <div id="cmpRow" style="display:none;align-items:center;gap:8px">
-      <span class="vs-lbl">vs</span>
-      <div class="dw" id="dWrap2">
-        <div class="dbtn cmp-active" onclick="toggleCal(2)">
-          <svg class="cal-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <span id="dLabel2">Previous Period</span>
-        </div>
-        <div class="ddrop" id="dDrop2">
-          <div class="preset-list" id="plist2"></div>
-          <div class="calwrap">
-            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Custom Date / Range</div>
-            <div class="cal-nav">
-              <button onclick="mth(2,-1)">‹</button>
-              <span class="cal-mth" id="calMth2"></span>
-              <button onclick="mth(2,1)">›</button>
+    <!-- Main Layout Wrapper -->
+    <div class="relative z-10 flex flex-col xl:flex-row min-h-screen p-4 md:p-6 gap-6 max-w-[1920px] mx-auto">
+        
+        <!-- Left / Center Column: Metrics & Chart -->
+        <div class="flex-1 flex flex-col gap-6 w-full">
+            
+            <!-- Header section -->
+            <header class="glass-panel rounded-2xl p-5 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full border-2 border-neon-cyan flex items-center justify-center shadow-[0_0_15px_rgba(0,243,255,0.5)]">
+                        <svg class="w-6 h-6 text-neon-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </div>
+                    <div>
+                        <h1 class="font-scifi text-2xl md:text-3xl font-bold tracking-wider text-white neon-cyan uppercase">Nexus Control Core</h1>
+                        <p class="text-xs text-neon-cyan uppercase tracking-[0.2em] animate-pulse">Meta Ads Synchronized</p>
+                    </div>
+                </div>
+                
+                <!-- Date/Filter Controls -->
+                <div class="flex gap-3">
+                    <button class="px-6 py-2 rounded-full glass-panel text-sm font-semibold hover:bg-glass-100 transition-all text-neon-cyan border border-neon-cyan shadow-[0_0_10px_rgba(0,243,255,0.2)]">Live Data</button>
+                    <button class="px-6 py-2 rounded-full glass-panel text-sm font-semibold hover:bg-glass-100 transition-all text-gray-400">Last 24H</button>
+                    <button class="px-6 py-2 rounded-full glass-panel text-sm font-semibold hover:bg-glass-100 transition-all text-gray-400">7 Days</button>
+                </div>
+            </header>
+
+            <!-- Metrics Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- Metric 1: Spend -->
+                <div class="tilt-card glass-panel rounded-2xl p-6 flex flex-col gap-2 cursor-crosshair group hover:border-neon-cyan/50 hover:shadow-[0_0_30px_rgba(0,243,255,0.2)]">
+                    <div class="flex justify-between items-center">
+                        <span class="font-scifi text-sm tracking-[0.1em] text-gray-400 uppercase">Ad Spend</span>
+                        <svg class="w-5 h-5 text-neon-cyan opacity-70 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <div class="font-scifi text-4xl font-bold text-white neon-cyan tracking-wide mt-2" style="transform: translateZ(20px);">₹1,42,091</div>
+                    <div class="flex items-center gap-2 mt-auto">
+                        <span class="text-neon-cyan text-xs flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg> +12.4%</span>
+                        <span class="text-xs text-gray-500">vs Prev. Cycle</span>
+                    </div>
+                </div>
+
+                <!-- Metric 2: Reach -->
+                <div class="tilt-card glass-panel rounded-2xl p-6 flex flex-col gap-2 cursor-crosshair group hover:border-neon-purple/50 hover:shadow-[0_0_30px_rgba(188,19,254,0.2)]">
+                    <div class="flex justify-between items-center">
+                        <span class="font-scifi text-sm tracking-[0.1em] text-gray-400 uppercase">Network Reach</span>
+                        <svg class="w-5 h-5 text-neon-purple opacity-70 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <div class="font-scifi text-4xl font-bold text-white neon-purple tracking-wide mt-2" style="transform: translateZ(20px);">849,203</div>
+                    <div class="flex items-center gap-2 mt-auto">
+                        <span class="text-neon-purple text-xs flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg> +5.2%</span>
+                        <span class="text-xs text-gray-500">vs Prev. Cycle</span>
+                    </div>
+                </div>
+
+                <!-- Metric 3: Impressions -->
+                <div class="tilt-card glass-panel rounded-2xl p-6 flex flex-col gap-2 cursor-crosshair group hover:border-blue-400/50 hover:shadow-[0_0_30px_rgba(96,165,250,0.2)]">
+                    <div class="flex justify-between items-center">
+                        <span class="font-scifi text-sm tracking-[0.1em] text-gray-400 uppercase">Gross Impressions</span>
+                        <svg class="w-5 h-5 text-blue-400 opacity-70 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    </div>
+                    <div class="font-scifi text-4xl font-bold text-white tracking-wide mt-2 drop-shadow-[0_0_10px_rgba(96,165,250,0.8)]" style="transform: translateZ(20px);">2,104,990</div>
+                    <div class="flex items-center gap-2 mt-auto">
+                        <span class="text-blue-400 text-xs flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg> +18.7%</span>
+                        <span class="text-xs text-gray-500">Frequency: 2.47</span>
+                    </div>
+                </div>
+
+                <!-- Metric 4: CTR -->
+                <div class="tilt-card glass-panel rounded-2xl p-6 flex flex-col gap-2 cursor-crosshair group hover:border-neon-green/50 hover:shadow-[0_0_30px_rgba(0,255,102,0.2)]">
+                    <div class="flex justify-between items-center">
+                        <span class="font-scifi text-sm tracking-[0.1em] text-gray-400 uppercase">System CTR</span>
+                        <svg class="w-5 h-5 text-neon-green opacity-70 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                    </div>
+                    <div class="font-scifi text-4xl font-bold text-white neon-green tracking-wide mt-2" style="transform: translateZ(20px);">3.84%</div>
+                    <div class="flex items-center gap-2 mt-auto">
+                        <span class="text-neon-green text-xs flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg> +0.4%</span>
+                        <span class="text-xs text-gray-500">Link Clicks: 80,831</span>
+                    </div>
+                </div>
+
+                <!-- Metric 5: ATC -->
+                <div class="tilt-card glass-panel rounded-2xl p-6 flex flex-col gap-2 cursor-crosshair group hover:border-neon-yellow/50 hover:shadow-[0_0_30px_rgba(255,235,59,0.2)]">
+                    <div class="flex justify-between items-center">
+                        <span class="font-scifi text-sm tracking-[0.1em] text-gray-400 uppercase">Cart Injections</span>
+                        <svg class="w-5 h-5 text-neon-yellow opacity-70 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    </div>
+                    <div class="font-scifi text-4xl font-bold text-white tracking-wide mt-2 drop-shadow-[0_0_10px_rgba(255,235,59,0.8)]" style="transform: translateZ(20px);">4,092</div>
+                    <div class="flex items-center gap-2 mt-auto">
+                        <span class="text-neon-yellow text-xs flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg> +22.1%</span>
+                        <span class="text-xs text-gray-500">Conv. Rate: 5.06%</span>
+                    </div>
+                </div>
+
+                <!-- Metric 6: Purchases -->
+                <div class="tilt-card glass-panel rounded-2xl p-6 flex flex-col gap-2 cursor-crosshair group hover:border-neon-magenta/50 hover:shadow-[0_0_30px_rgba(255,0,255,0.2)]">
+                    <div class="flex justify-between items-center">
+                        <span class="font-scifi text-sm tracking-[0.1em] text-gray-400 uppercase">Acquisitions</span>
+                        <svg class="w-5 h-5 text-neon-magenta opacity-70 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <div class="font-scifi text-4xl font-bold text-white neon-magenta tracking-wide mt-2" style="transform: translateZ(20px);">894</div>
+                    <div class="flex items-center gap-2 mt-auto">
+                        <span class="text-neon-magenta text-xs flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg> +34.2%</span>
+                        <span class="text-xs text-gray-500">CPA: ₹158.93</span>
+                    </div>
+                </div>
+
             </div>
-            <div class="cal-grid" id="calGrid2"></div>
-            <div class="cal-hint" id="calHint2">Click date or range start</div>
-            <button class="cal-apply" id="calApply2" onclick="applyCustom(2)">APPLY →</button>
-          </div>
+
+            <!-- Main Data Chart Panel -->
+            <div class="glass-panel flex-1 rounded-2xl p-6 flex flex-col min-h-[400px]">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-scifi tracking-[0.15em] text-neon-cyan uppercase">Vector Output Analysis <span class="text-gray-500 text-xs ml-2 normal-case tracking-normal">ROAS vs SPEND</span></h2>
+                    <div class="flex gap-2">
+                        <div class="w-3 h-3 rounded-full bg-neon-cyan animate-blink shadow-[0_0_10px_#00f3ff]"></div>
+                        <div class="w-3 h-3 rounded-full bg-neon-magenta shadow-[0_0_10px_#ff00ff]"></div>
+                    </div>
+                </div>
+                <div class="relative flex-1 w-full h-full">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+
         </div>
-      </div>
+
+        <!-- Right Column: AI Insights Sidebar -->
+        <aside class="glass-panel w-full xl:w-96 rounded-2xl p-6 flex flex-col gap-6">
+            <div class="flex items-center gap-3 border-b border-glass-100 pb-4">
+                <div class="relative">
+                    <div class="w-10 h-10 rounded-full bg-black border border-neon-purple flex items-center justify-center relative z-10">
+                        <svg class="w-5 h-5 text-neon-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                    </div>
+                    <div class="absolute inset-0 bg-neon-purple rounded-full blur-md animate-pulse"></div>
+                </div>
+                <div>
+                    <h3 class="font-scifi text-lg font-bold text-white tracking-widest uppercase">AI Synthesis</h3>
+                    <p class="text-xs text-gray-400">Neural Network Active</p>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-4 overflow-y-auto pr-2 h-[calc(100vh-200px)] xl:h-auto">
+                
+                <!-- Insight 1: Critical -->
+                <div class="bg-gradient-to-r from-[rgba(255,42,42,0.1)] to-transparent border-l-2 border-neon-red p-4 rounded-r-lg relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-[rgba(255,42,42,0.05)] translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300"></div>
+                    <div class="flex justify-between items-start mb-2 relative z-10">
+                        <span class="text-xs font-bold text-neon-red tracking-wider uppercase">Anomaly Detected</span>
+                        <span class="text-[10px] text-gray-500">T-minus 2m</span>
+                    </div>
+                    <p class="text-sm text-gray-300 relative z-10 leading-relaxed">
+                        CTR on <span class="text-white font-semibold">"Cyber Node Promo"</span> spiked 420% in the last hour. ROAS efficiency at peak limit. 
+                    </p>
+                    <button class="mt-3 text-xs bg-[rgba(255,42,42,0.2)] text-neon-red px-3 py-1.5 rounded-full border border-neon-red hover:bg-neon-red hover:text-white transition-colors">Scale Budget +20%</button>
+                </div>
+
+                <!-- Insight 2: Warning -->
+                <div class="bg-gradient-to-r from-[rgba(255,235,59,0.1)] to-transparent border-l-2 border-neon-yellow p-4 rounded-r-lg relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-[rgba(255,235,59,0.05)] translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300"></div>
+                    <div class="flex justify-between items-start mb-2 relative z-10">
+                        <span class="text-xs font-bold text-neon-yellow tracking-wider uppercase">Audience Fatigue</span>
+                        <span class="text-[10px] text-gray-500">T-minus 45m</span>
+                    </div>
+                    <p class="text-sm text-gray-300 relative z-10 leading-relaxed">
+                        Frequency for <span class="text-white font-semibold">Lookalike 1% Core</span> crossed threshold 3.5. Conversion probability dropping.
+                    </p>
+                    <button class="mt-3 text-xs bg-[rgba(255,235,59,0.2)] text-neon-yellow px-3 py-1.5 rounded-full border border-neon-yellow hover:bg-neon-yellow hover:text-black transition-colors">Rotate Creatives</button>
+                </div>
+
+                <!-- Insight 3: Info -->
+                <div class="bg-gradient-to-r from-[rgba(0,243,255,0.1)] to-transparent border-l-2 border-neon-cyan p-4 rounded-r-lg relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-[rgba(0,243,255,0.05)] translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300"></div>
+                    <div class="flex justify-between items-start mb-2 relative z-10">
+                        <span class="text-xs font-bold text-neon-cyan tracking-wider uppercase">Predictive Vector</span>
+                        <span class="text-[10px] text-gray-500">T-minus 1h</span>
+                    </div>
+                    <p class="text-sm text-gray-300 relative z-10 leading-relaxed">
+                        Current trajectory indicates a <span class="text-white font-semibold">4.2x ROAS</span> by end of cycle. Campaign "Alpha-Strike" driving 68% of acquisitions.
+                    </p>
+                </div>
+
+                <!-- Insight 4: Info -->
+                <div class="bg-gradient-to-r from-[rgba(188,19,254,0.1)] to-transparent border-l-2 border-neon-purple p-4 rounded-r-lg relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-[rgba(188,19,254,0.05)] translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300"></div>
+                    <div class="flex justify-between items-start mb-2 relative z-10">
+                        <span class="text-xs font-bold text-neon-purple tracking-wider uppercase">Optimization Setup</span>
+                        <span class="text-[10px] text-gray-500">T-minus 3h</span>
+                    </div>
+                    <p class="text-sm text-gray-300 relative z-10 leading-relaxed">
+                        Advantage+ placement routing initiated. Shifting 15% allocation from Feed to Stories based on localized engagement velocity.
+                    </p>
+                </div>
+
+            </div>
+        </aside>
+
     </div>
-  </div>
 
-  <!-- TABS -->
-  <div class="tabs">
-    <div class="tab active" onclick="sw('overview',this)">Overview</div>
-    <div class="tab" onclick="sw('campaigns',this)">Campaigns</div>
-    <div class="tab" onclick="sw('trends',this)">Trends</div>
-    <div class="tab" onclick="sw('benchmark',this)">📊 Benchmark</div>
-    <div class="tab" onclick="sw('ai',this)">🤖 AI Recs</div>
-    <div class="tab" onclick="sw('guide',this)">📖 Guide</div>
-  </div>
+    <!-- 3D Tilt Script & Chart Initializer -->
+    <script>
+        // 3D Tilt Hover Effect for Cards
+        document.querySelectorAll('.tilt-card').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = ((y - centerY) / centerY) * -12; // Max rotation 12deg
+                const rotateY = ((x - centerX) / centerX) * 12;
+                
+                // Add a dynamic glare effect calculation if desired, here just 3D transform
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
+            });
+        });
 
-  <div id="t-overview"><div class="sgrid" id="sGrid"></div></div>
+        // Setup Chart.js with Sci-Fi Theme
+        const ctx = document.getElementById('mainChart').getContext('2d');
+        
+        // Gradient for Area Chart
+        let gradientCyan = ctx.createLinearGradient(0, 0, 0, 400);
+        gradientCyan.addColorStop(0, 'rgba(0, 243, 255, 0.5)');
+        gradientCyan.addColorStop(1, 'rgba(0, 243, 255, 0.0)');
 
-  <div id="t-campaigns" style="display:none">
-    <div class="twrap">
-      <div class="thead-bar">
-        <span class="thead-title">Campaigns</span>
-        <span class="active-pill" id="campPeriodLabel">Selected Period</span>
-      </div>
-      <div class="tscroll">
-        <table>
-          <thead><tr>
-            <th>Campaign</th><th>Objective</th>
-            <th>Spent ₹</th><th>Impressions</th><th>Reach</th><th>Frequency</th>
-            <th>Link Clicks</th><th>CTR%</th><th>CPC ₹</th><th>CPM ₹</th>
-            <th>LP Views</th><th>Add to Cart</th><th>Checkouts</th>
-            <th>Pmt Info</th><th>Purchases</th><th>Results</th><th>Cost/Result ₹</th>
-          </tr></thead>
-          <tbody id="cTbl"></tbody>
-          <tfoot id="cFoot"></tfoot>
-        </table>
-      </div>
-    </div>
-  </div>
+        let gradientMagenta = ctx.createLinearGradient(0, 0, 0, 400);
+        gradientMagenta.addColorStop(0, 'rgba(255, 0, 255, 0.5)');
+        gradientMagenta.addColorStop(1, 'rgba(255, 0, 255, 0.0)');
 
-  <div id="t-trends" style="display:none">
-    <div class="charts-grid">
-      <div class="panel"><div class="panel-title">Spend ₹</div><canvas id="cSpend" height="200"></canvas></div>
-      <div class="panel"><div class="panel-title">CTR % (Link)</div><canvas id="cCTR" height="200"></canvas></div>
-      <div class="panel"><div class="panel-title">Link Clicks</div><canvas id="cClicks" height="200"></canvas></div>
-      <div class="panel"><div class="panel-title">CPM ₹</div><canvas id="cCPM" height="200"></canvas></div>
-      <div class="panel"><div class="panel-title">Add to Cart</div><canvas id="cATC" height="200"></canvas></div>
-      <div class="panel"><div class="panel-title">Purchases</div><canvas id="cPurch" height="200"></canvas></div>
-    </div>
-  </div>
+        Chart.defaults.color = '#6b7280';
+        Chart.defaults.font.family = "'Inter', sans-serif";
 
-  <div id="t-benchmark" style="display:none"><div id="benchGrid"></div></div>
-
-  <div id="t-ai" style="display:none">
-    <div class="ai-intro">
-      <p id="aiIntroTxt">AI analyzes current period's full-funnel data and gives 5 specific actions for today. Requires an Anthropic API key (entered once per browser session — not stored in this file or in the repo).</p>
-      <button class="btn-o" id="aiBt" onclick="getAI()">GENERATE RECOMMENDATIONS →</button>
-    </div>
-    <div id="aiOut"><div id="aiLbl">AI Analysis</div><div id="aiTxt"></div></div>
-  </div>
-
-  <div id="t-guide" style="display:none">
-    <div class="guide-intro">
-      <p>📊 This dashboard shows how your Meta (Facebook/Instagram) ads are performing. Each number tells a story about where your money is going and whether it's working. This guide explains every metric in plain language — no technical knowledge needed.</p>
-    </div>
-    <div class="guide-sec">💰 SPEND & REACH</div>
-    <div class="gcard"><div class="gcard-title">Amount Spent</div><div class="gcard-body">How much money was used from your ad budget in the selected period. Higher doesn't always mean better — it matters how efficiently that money performed.<div class="gbench">No benchmark — depends on your budget</div></div></div>
-    <div class="gcard"><div class="gcard-title">Impressions</div><div class="gcard-body">Total number of times your ads were shown on screen. If one person saw your ad 5 times, that counts as 5 impressions. This is your <strong>total visibility</strong>.<div class="gbench">More impressions = more visibility. But watch frequency.</div></div></div>
-    <div class="gcard"><div class="gcard-title">Reach</div><div class="gcard-body">Number of <strong>unique people</strong> who saw your ad. Unlike impressions, seeing the same ad 5 times still counts as reach of 1. Shows how wide your audience spread is.<div class="gbench">Higher reach with lower frequency is ideal.</div></div></div>
-    <div class="gcard"><div class="gcard-title">Frequency</div><div class="gcard-body">Average number of times each person saw your ad. Frequency of 3 means each person saw it ~3 times. <strong>Too high = ad fatigue</strong> — people start ignoring or hiding your ad.<div class="gbench"><span>Good: below 2.5 · Watch: 2.5–4 · Danger zone: above 4</span></div></div></div>
-
-    <div class="guide-sec">👆 CLICKS & TRAFFIC</div>
-    <div class="gcard"><div class="gcard-title">Link Clicks</div><div class="gcard-body">Number of times people clicked the link in your ad to visit your website. This is the most important click metric — it shows real intent to visit your store.<div class="gbench">Higher = better. Compare with LP Views to check site speed.</div></div></div>
-    <div class="gcard"><div class="gcard-title">CTR — Click-Through Rate</div><div class="gcard-body">Out of everyone who saw your ad, what % actually clicked it. Formula: Link Clicks ÷ Impressions × 100. <strong>Higher CTR = more compelling ad creative.</strong><div class="gbench"><span>Good: above 1.5% · Average: 0.5–1.5% · Low: below 0.5%</span></div></div></div>
-    <div class="gcard"><div class="gcard-title">CPC — Cost per Click</div><div class="gcard-body">How much you paid on average for each link click. Lower is better. High CPC means your ad isn't engaging enough OR your audience is too competitive.<div class="gbench"><span>Good: below ₹15 · Average: ₹15–30 · High: above ₹30</span></div></div></div>
-    <div class="gcard"><div class="gcard-title">CPM — Cost per 1,000 Impressions</div><div class="gcard-body">How much it costs to show your ad 1,000 times. This reflects auction competition — if many advertisers target the same audience, CPM goes up. High CPM = expensive market.<div class="gbench"><span>Good: below ₹100 · Average: ₹100–200 · High: above ₹200</span></div></div></div>
-    <div class="gcard"><div class="gcard-title">Landing Page Views (LP Views)</div><div class="gcard-body">Number of times your website actually loaded after someone clicked. If Link Clicks = 100 but LP Views = 60, your site is slow — 40 people gave up waiting. <strong>Fix your site speed.</strong><div class="gbench">Should be close to Link Clicks. Drop-off above 20% needs attention.</div></div></div>
-
-    <div class="guide-sec">🛒 FUNNEL — FROM INTEREST TO PURCHASE</div>
-    <div class="gcard"><div class="gcard-title">Add to Cart</div><div class="gcard-body">Number of people who added a product to their cart on your website after clicking the ad. Shows <strong>strong purchase intent</strong> — they liked what they saw.<div class="gbench">Higher = better. Track ratio vs Purchases.</div></div></div>
-    <div class="gcard"><div class="gcard-title">Checkouts Initiated</div><div class="gcard-body">People who started the checkout process. They went beyond the cart to actually begin buying. Drop-off between ATC and Checkout usually means cart abandonment issues.<div class="gbench">Should be 30–60% of Add to Carts.</div></div></div>
-    <div class="gcard"><div class="gcard-title">Add Payment Info</div><div class="gcard-body">People who entered their payment details. Very high intent — they were ready to pay. If this is high but Purchases are low, your payment process may have a bug or friction point.<div class="gbench">Should be close to Checkouts Initiated.</div></div></div>
-    <div class="gcard"><div class="gcard-title">Purchases</div><div class="gcard-body">Final conversions — people who actually completed a purchase. This is the <strong>most important metric</strong> for an e-commerce brand. All other metrics support this one.<div class="gbench">Higher = better. Directly tied to revenue.</div></div></div>
-    <div class="gcard"><div class="gcard-title">Results</div><div class="gcard-body">The primary goal of each campaign, defined by its objective. For a Sales campaign, Results = Purchases. For a Traffic campaign, Results = Link Clicks. It's the headline metric per campaign objective.<div class="gbench">Depends on campaign objective.</div></div></div>
-    <div class="gcard"><div class="gcard-title">Cost per Result / Cost per Purchase</div><div class="gcard-body">How much you spent on average to get one purchase. If you spent ₹5,000 and got 10 purchases, Cost per Purchase = ₹500. <strong>Lower = more efficient ads.</strong><div class="gbench"><span>Good: below ₹500 · Average: ₹500–1,500 · High: above ₹1,500</span></div></div></div>
-
-    <div class="guide-sec">📊 CAMPAIGN OBJECTIVE</div>
-    <div class="gcard"><div class="gcard-title">What does "Sales - Purchase" or "Sales - Add to Cart" mean?</div><div class="gcard-body">
-      This tells you <strong>what Meta is optimizing for</strong> — what action it's trying to get people to take.<br><br>
-      <strong>Sales - Purchase:</strong> Meta shows your ad to people most likely to buy. Best for direct revenue.<br>
-      <strong>Sales - Add to Cart:</strong> Meta shows your ad to people most likely to add to cart. Good for building pipeline but may not all convert to purchase.<br>
-      <strong>Traffic:</strong> Meta shows your ad to people most likely to click and visit your site. Builds top-of-funnel.<br>
-      <strong>Awareness:</strong> Max reach and visibility. People see your brand, not necessarily click.
-    </div></div>
-
-    <div class="guide-sec">📖 HOW TO USE THIS DASHBOARD</div>
-    <div class="gcard"><div class="gcard-title">Daily routine (5 minutes)</div><div class="gcard-body">
-      1. Open the dashboard → set to <strong>Yesterday</strong><br>
-      2. Check <strong>Overview</strong> — look at CTR, CPC, Purchases, Cost/Purchase<br>
-      3. Go to <strong>Benchmark</strong> tab — any red metrics need attention today<br>
-      4. Go to <strong>Campaigns</strong> tab — which campaign is spending the most? Is it performing?<br>
-      5. Click <strong>AI Recs</strong> → Generate Recommendations — get specific actions for today<br>
-      6. Use <strong>Compare</strong> button to compare yesterday vs the day before
-    </div></div>
-    <div class="gcard"><div class="gcard-title">When to worry</div><div class="gcard-body">
-      🔴 <strong>CTR below 0.5%</strong> — Ad creative is not grabbing attention. Test new images/videos.<br>
-      🔴 <strong>Frequency above 4</strong> — Same people seeing your ad too many times. Expand audience or refresh creative.<br>
-      🔴 <strong>LP Views much lower than Link Clicks</strong> — Website is too slow. People leaving before it loads.<br>
-      🔴 <strong>High Add to Cart but low Purchases</strong> — Checkout has friction. Check price, shipping cost, payment options.<br>
-      🔴 <strong>Cost per Purchase above ₹1,500</strong> — Ads not efficient. Could be wrong audience, weak creative, or bad landing page.
-    </div></div>
-  </div>
-</div>
-
-<script>
-const BASE='https://graph.facebook.com/v20.0';
-
-/* ───────────────────────────────────────────────────────────
-   TOKEN SECURELY MOVED TO BACKEND
-   ─────────────────────────────────────────────────────────── */
-const TOKEN='hidden_in_backend';
-const ACCOUNT='2495711530616735';
-
-// Anthropic key is NOT hardcoded — entered per-browser-session via prompt() the first
-// time someone clicks "Generate Recommendations", kept only in memory for that tab.
-let AI_KEY='';
-let charts={};
-let comparing=false;
-let lastSum=null,lastCmpSum=null,lastCamps=[];
-let campObjMap={};// campaign_id → objective label
-
-// Two date configs: [1]=primary, [2]=compare
-const DC=[null,
-  {type:'preset',preset:'yesterday',label:'Yesterday'},
-  {type:'preset',preset:'last_7d',label:'Last 7 Days'}
-];
-const CAL=[null,
-  {y:new Date().getFullYear(),m:new Date().getMonth(),s:null,e:null},
-  {y:new Date().getFullYear(),m:new Date().getMonth(),s:null,e:null}
-];
-
-const $=id=>document.getElementById(id);
-const fN=(n,p='')=>n==null||isNaN(n)||n===''?'—':`${p}${Number(n).toLocaleString('en-IN',{maximumFractionDigits:2})}`;
-const fI=n=>(!n||isNaN(n)||n===0)?'—':Number(n).toLocaleString('en-IN',{maximumFractionDigits:0});
-const pct=n=>n==null||isNaN(n)?'—':`${Number(n).toFixed(2)}%`;
-const acId=id=>id.startsWith('act_')?id:`act_${id.trim()}`;
-const fd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
-const PRESETS=[
-  ['today','Today'],['yesterday','Yesterday'],
-  ['last2','Last 2 Days'],['last3','Last 3 Days'],['last4','Last 4 Days'],
-  ['last_7d','Last 7 Days'],['last_14d','Last 14 Days'],['last_30d','Last 30 Days'],['this_month','This Month']
-];
-
-// Objective mapping
-const OBJ_MAP={
-  'OUTCOME_SALES':'Sales','OUTCOME_TRAFFIC':'Traffic','OUTCOME_AWARENESS':'Awareness',
-  'OUTCOME_ENGAGEMENT':'Engagement','OUTCOME_LEADS':'Leads','OUTCOME_APP_PROMOTION':'App Promo',
-  'CONVERSIONS':'Conversions','LINK_CLICKS':'Traffic','REACH':'Awareness',
-  'BRAND_AWARENESS':'Awareness','VIDEO_VIEWS':'Video Views','LEAD_GENERATION':'Lead Gen',
-  'MESSAGES':'Messages','CATALOG_SALES':'Catalog Sales','STORE_VISITS':'Store Visits',
-  'POST_ENGAGEMENT':'Engagement','PAGE_LIKES':'Awareness'
-};
-
-// ── CALENDAR INIT ──
-function initPresetList(n){
-  const el=$(`plist${n}`);
-  el.innerHTML=PRESETS.map(([v,l])=>`<div class="pi${DC[n].label===l?' sel':''}" onclick="setPreset(${n},'${v}','${l}')">${l}</div>`).join('');
-}
-function drawCal(n){
-  const c=CAL[n];
-  $(`calMth${n}`).textContent=`${MONTHS[c.m]} ${c.y}`;
-  const first=new Date(c.y,c.m,1).getDay(),days=new Date(c.y,c.m+1,0).getDate();
-  const now=new Date();now.setHours(0,0,0,0);
-  let h=['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
-  for(let i=0;i<first;i++)h+=`<div class="cd emp"></div>`;
-  for(let d=1;d<=days;d++){
-    const date=new Date(c.y,c.m,d),fut=date>now,tod=date.getTime()===now.getTime(),ds=fd(date);
-    let cls='cd';
-    if(fut)cls+=' fut';
-    else if(ds===c.s||ds===c.e)cls+=' sel';
-    else if(c.s&&c.e&&ds>c.s&&ds<c.e)cls+=' inr';
-    else if(tod)cls+=' tod';
-    h+=`<div class="${cls}"${fut?'':` onclick="dayClick(${n},'${ds}')"`}>${d}</div>`;
-  }
-  $(`calGrid${n}`).innerHTML=h;
-  $(`calHint${n}`).textContent=!c.s?'Click a date or range start':!c.e?`Start: ${c.s} — click end date`:`${c.s}  →  ${c.e}`;
-  $(`calApply${n}`).style.display=c.s?'block':'none';
-}
-function mth(n,dir){const c=CAL[n];c.m+=dir;if(c.m>11){c.m=0;c.y++;}else if(c.m<0){c.m=11;c.y--;}drawCal(n);}
-function dayClick(n,ds){const c=CAL[n];if(!c.s||c.e){c.s=ds;c.e=null;}else{if(ds<c.s){c.e=c.s;c.s=ds;}else c.e=ds;}drawCal(n);}
-function applyCustom(n){
-  const c=CAL[n],s=c.s,e=c.e||c.s;
-  const lbl=s===e?s:`${s} → ${e}`;
-  DC[n]={type:'custom',since:s,until:e,label:lbl};
-  $(`dLabel${n}`).textContent=lbl;
-  document.querySelectorAll(`#plist${n} .pi`).forEach(el=>el.classList.remove('sel'));
-  $(`dDrop${n}`).classList.remove('open');
-  loadData();
-}
-function toggleCal(n){
-  const drop=$(`dDrop${n}`);
-  const open=drop.classList.contains('open');
-  document.querySelectorAll('.ddrop').forEach(d=>d.classList.remove('open'));
-  if(!open){initPresetList(n);drawCal(n);drop.classList.add('open');}
-}
-document.addEventListener('click',e=>{
-  if(!$('dWrap1').contains(e.target)&&!($('dWrap2')&&$('dWrap2').contains(e.target)))
-    document.querySelectorAll('.ddrop').forEach(d=>d.classList.remove('open'));
-});
-
-function setPreset(n,preset,label){
-  DC[n]={type:'preset',preset,label};
-  $(`dLabel${n}`).textContent=label;
-  document.querySelectorAll(`#plist${n} .pi`).forEach(el=>{el.classList.remove('sel');if(el.textContent===label)el.classList.add('sel');});
-  CAL[n].s=null;CAL[n].e=null;
-  $(`dDrop${n}`).classList.remove('open');
-  loadData();
-}
-
-function dparam(n){
-  const d=DC[n];
-  if(d.type==='preset'){
-    if(d.preset.startsWith('last')){
-      const days=parseInt(d.preset.replace('last',''));
-      if(!isNaN(days)){
-        const now=new Date();
-        const until=new Date(now);until.setDate(until.getDate()-1);
-        const since=new Date(now);since.setDate(since.getDate()-days);
-        return`time_range={"since":"${fd(since)}","until":"${fd(until)}"}`;
-      }
-    }
-    return`date_preset=${d.preset}`;
-  }
-  return`time_range={"since":"${d.since}","until":"${d.until}"}`;
-}
-
-function trendParam(){
-  const d=DC[1];
-  if(d.type==='preset'&&['today','yesterday'].includes(d.preset))return'date_preset=last_7d';
-  return dparam(1);
-}
-
-// ── COMPARE ──
-function toggleCompare(){
-  comparing=!comparing;
-  $('cmpBtn').classList.toggle('active-compare',comparing);
-  $('cmpRow').style.display=comparing?'flex':'none';
-  if(comparing)loadData();
-  else{lastCmpSum=null;renderStats(lastSum);}
-}
-
-// ROUTE TO VERCEL BACKEND INSTEAD OF DIRECT TO META
-async function apiFetch(url) {
-  const r = await fetch('/api/meta', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ targetUrl: url })
-  });
-  const j = await r.json();
-  if (j.error) throw new Error(j.error.message);
-  return j;
-}
-
-// ── ACTION PARSERS ──
-const ga=(actions,types)=>{if(!actions)return 0;let t=0;for(const tp of(Array.isArray(types)?types:[types])){const f=actions.find(a=>a.action_type===tp);if(f)t+=Number(f.value||0);}return t;};
-const gcpr=(cpa,types)=>{if(!cpa)return null;for(const tp of(Array.isArray(types)?types:[types])){const f=cpa.find(a=>a.action_type===tp);if(f)return Number(f.value||0);}return null;};
-function parseR(row){
-  const a=row.actions||[],cpa=row.cost_per_action_type||[];
-  const linkClicks=ga(a,'link_click');
-  const lpv=ga(a,'landing_page_view');
-  const atc=ga(a,['offsite_conversion.fb_pixel_add_to_cart','onsite_web_add_to_cart_facebook_pixel','add_to_cart']);
-  const chk=ga(a,['offsite_conversion.fb_pixel_initiate_checkout','onsite_web_initiate_checkout_facebook_pixel','initiate_checkout']);
-  const purch=ga(a,['offsite_conversion.fb_pixel_purchase','purchase','onsite_web_purchase_facebook_pixel']);
-  const pmt=ga(a,['offsite_conversion.fb_pixel_add_payment_info','add_payment_info']);
-  const results=purch||ga(a,['lead','complete_registration'])||0;
-  const cpr=gcpr(cpa,['offsite_conversion.fb_pixel_purchase','purchase','lead'])||
-    (results&&row.spend?Number(row.spend)/results:null);
-  return{...row,linkClicks,lpv,atc,chk,purch,pmt,results,cpr};
-}
-
-// Infer campaign sub-objective from data
-function inferObj(row,baseLabel){
-  if(!baseLabel||baseLabel==='—')return'—';
-  if(baseLabel==='Sales'||baseLabel==='Conversions'||baseLabel==='Catalog Sales'){
-    if(row.purch>0)return`${baseLabel} — Purchase`;
-    if(row.chk>0)return`${baseLabel} — Checkout`;
-    if(row.atc>0)return`${baseLabel} — Add to Cart`;
-    return baseLabel;
-  }
-  return baseLabel;
-}
-
-// ── LOAD ──
-async function loadData(init=false){
-  $('rfSp').style.display='inline-block';
-  const acc=acId(ACCOUNT),t=TOKEN,dp=dparam(1),tp=trendParam();
-  const fields='spend,impressions,clicks,ctr,cpm,cpc,reach,frequency,actions,cost_per_action_type';
-
-  try{
-    // Fetch campaign objectives (for labeling)
-    const objRes=await apiFetch(`${BASE}/${acc}/campaigns?fields=id,name,objective&limit=200&access_token=${t}`);
-    campObjMap={};
-    (objRes.data||[]).forEach(c=>{campObjMap[c.id]=OBJ_MAP[c.objective]||c.objective||'—';});
-
-    const[sRes,cRes,tRes]=await Promise.all([
-      apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${dp}&access_token=${t}`),
-      apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,campaign_name,${fields}&${dp}&level=campaign&limit=100&access_token=${t}`),
-      apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${tp}&time_increment=1&access_token=${t}`)
-    ]);
-
-    // Compare period (if active)
-    if(comparing){
-      const dp2=dparam(2);
-      const cmpRes=await apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${dp2}&access_token=${t}`);
-      lastCmpSum=parseR(cmpRes.data?.[0]||{});
-    }
-
-    lastSum=parseR(sRes.data?.[0]||{});
-    // Show all campaigns with data in selected period (naturally = campaigns that ran on those dates)
-    lastCamps=(cRes.data||[]).map(c=>({...parseR(c),objLabel:inferObj(parseR(c),campObjMap[c.campaign_id]||'—')}));
-
-    $('campPeriodLabel').textContent=DC[1].label;
-    renderStats(lastSum);
-    renderCamps(lastCamps);
-    renderCharts(tRes.data||[]);
-    renderBench(lastSum);
-    $('lastFetched').textContent=`Updated: ${new Date().toLocaleString('en-IN')} · ${DC[1].label}`;
-  }catch(e){
-    $('lastFetched').textContent=`Error loading data: ${e.message}`;
-  }finally{$('rfSp').style.display='none';}
-}
-
-// ── STATS ──
-function hintCls(v,good,warn,hib=false){
-  if(v==null||isNaN(v))return null;
-  if(hib)return v>=good?{t:'✓ Good',c:'g'}:v>=warn?{t:'Average',c:'w'}:{t:'Low',c:'b'};
-  return v<=good?{t:'✓ Good',c:'g'}:v<=warn?{t:'Average',c:'w'}:{t:'High',c:'b'};
-}
-function deltaHtml(curr,prev,lowerBetter=false){
-  if(!prev||!curr||prev===0)return'';
-  const d=((curr-prev)/prev*100);
-  const up=d>0;
-  const good=(up&&!lowerBetter)||(!up&&lowerBetter);
-  const arrow=up?'↑':'↓';
-  const cls=good?'delta-up':'delta-dn';
-  return`<span class="${cls}">${arrow}${Math.abs(d).toFixed(1)}% vs prev</span>`;
-}
-
-function renderStats(s){
-  const p=lastCmpSum;
-  const cards=[
-    {l:'Amount Spent',v:`₹${fN(s.spend)}`,h:null,acc:true,lb:false,pk:'spend'},
-    {l:'Impressions',v:fI(s.impressions),h:null,lb:false,pk:'impressions'},
-    {l:'Reach',v:fI(s.reach),h:null,lb:false,pk:'reach'},
-    {l:'Frequency',v:fN(s.frequency),h:hintCls(s.frequency,2.5,4),lb:true,pk:'frequency'},
-    {l:'Link Clicks',v:fI(s.linkClicks),h:null,lb:false,pk:'linkClicks'},
-    {l:'CTR (Link)',v:pct(s.ctr),h:hintCls(s.ctr,1.5,0.5,true),lb:false,pk:'ctr'},
-    {l:'CPC',v:`₹${fN(s.cpc)}`,h:hintCls(s.cpc,15,30),lb:true,pk:'cpc'},
-    {l:'CPM',v:`₹${fN(s.cpm)}`,h:hintCls(s.cpm,100,200),lb:true,pk:'cpm'},
-    {l:'LP Views',v:fI(s.lpv),h:null,lb:false,pk:'lpv'},
-    {l:'Add to Cart',v:fI(s.atc),h:null,lb:false,pk:'atc'},
-    {l:'Checkouts',v:fI(s.chk),h:null,lb:false,pk:'chk'},
-    {l:'Purchases',v:fI(s.purch),h:null,lb:false,pk:'purch'},
-    {l:'Cost/Purchase',v:s.cpr?`₹${fN(s.cpr)}`:'—',h:hintCls(s.cpr,500,1500),lb:true,pk:'cpr'},
-  ];
-  $('sGrid').innerHTML=cards.map(c=>`
-    <div class="sc${c.acc?' acc':''}">
-      <div class="sc-lbl">${c.l}</div>
-      <div class="sc-val">${c.v}</div>
-      ${c.h?`<div class="sc-hint ${c.h.c}">${c.h.t}</div>`:''}
-      ${(p&&c.pk&&p[c.pk]!=null)?`<div class="sc-cmp">${deltaHtml(s[c.pk],p[c.pk],c.lb)}<span style="color:var(--muted);font-size:10px">${c.pk==='spend'||c.pk==='cpc'||c.pk==='cpm'||c.pk==='cpr'?'₹':''}${typeof p[c.pk]==='number'&&!isNaN(p[c.pk])?p[c.pk].toLocaleString('en-IN',{maximumFractionDigits:2}):''}</span></div>`:''}
-    </div>`).join('');
-}
-
-// ── CAMPAIGNS ──
-function ctrCls(v){return v>1.5?'cg':v>0.5?'cw':'cb';}
-function freqCls(v){return v>4?'cb':v>2.5?'cw':'';}
-function sum(arr,key){return arr.reduce((a,c)=>a+(parseFloat(c[key])||0),0);}
-function sumA(arr,key){return arr.reduce((a,c)=>a+(Number(c[key])||0),0);}
-
-function renderCamps(camps){
-  if(!camps.length){
-    $('cTbl').innerHTML=`<tr><td colspan="17" class="ec">No campaign data for selected period</td></tr>`;
-    $('cFoot').innerHTML='';return;
-  }
-  $('cTbl').innerHTML=camps.map(c=>`
-    <tr>
-      <td class="td-name" title="${c.campaign_name}">${c.campaign_name}</td>
-      <td class="td-obj"><span class="obj-pill">${c.objLabel||'—'}</span></td>
-      <td class="td-spend">${fN(c.spend)}</td>
-      <td>${fI(c.impressions)}</td>
-      <td>${fI(c.reach)}</td>
-      <td class="${freqCls(c.frequency)}">${fN(c.frequency)}</td>
-      <td>${fI(c.linkClicks)}</td>
-      <td class="${ctrCls(c.ctr)}">${pct(c.ctr)}</td>
-      <td>${fN(c.cpc)}</td>
-      <td>${fN(c.cpm)}</td>
-      <td>${fI(c.lpv)}</td>
-      <td>${fI(c.atc)}</td>
-      <td>${fI(c.chk)}</td>
-      <td>${fI(c.pmt)}</td>
-      <td>${fI(c.purch)}</td>
-      <td>${fI(c.results)}</td>
-      <td>${c.cpr?fN(c.cpr):'—'}</td>
-    </tr>`).join('');
-
-  // Totals row
-  const totSpend=sum(camps,'spend');
-  const totImp=sumA(camps,'impressions');
-  const totReach=sumA(camps,'reach');
-  const totLC=sumA(camps,'linkClicks');
-  const totLPV=sumA(camps,'lpv');
-  const totATC=sumA(camps,'atc');
-  const totChk=sumA(camps,'chk');
-  const totPmt=sumA(camps,'pmt');
-  const totPurch=sumA(camps,'purch');
-  const totRes=sumA(camps,'results');
-  const avgCtr=totImp?totLC/totImp*100:0;
-  const avgCpc=totLC?totSpend/totLC:0;
-  const avgCpm=totImp?totSpend/totImp*1000:0;
-  const avgFreq=camps.length?sum(camps,'frequency')/camps.length:0;
-  const totCpr=totRes?totSpend/totRes:null;
-
-  $('cFoot').innerHTML=`<tr>
-    <td style="font-family:'DM Sans',sans-serif;font-weight:700;color:var(--orange)">TOTAL (${camps.length} campaigns)</td>
-    <td>—</td>
-    <td class="td-spend">${fN(totSpend)}</td>
-    <td>${fI(totImp)}</td>
-    <td>${fI(totReach)}</td>
-    <td>${fN(avgFreq)}</td>
-    <td>${fI(totLC)}</td>
-    <td>${pct(avgCtr)}</td>
-    <td>${fN(avgCpc)}</td>
-    <td>${fN(avgCpm)}</td>
-    <td>${fI(totLPV)}</td>
-    <td>${fI(totATC)}</td>
-    <td>${fI(totChk)}</td>
-    <td>${fI(totPmt)}</td>
-    <td>${fI(totPurch)}</td>
-    <td>${fI(totRes)}</td>
-    <td>${totCpr?fN(totCpr):'—'}</td>
-  </tr>`;
-}
-
-// ── CHARTS ──
-const TT={backgroundColor:'#111827',titleColor:'#94a3b8',bodyColor:'#f1f5f9',borderColor:'rgba(255,255,255,0.1)',borderWidth:1};
-const SC={grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748b',font:{size:11}}};
-function mkChart(id,labels,data,color,type='bar',pre=''){
-  if(charts[id])charts[id].destroy();
-  const ctx=$(id)?.getContext('2d');if(!ctx)return;
-  charts[id]=new Chart(ctx,{type,data:{labels,datasets:[{data,backgroundColor:type==='bar'?color+'33':undefined,borderColor:color,borderWidth:2,borderRadius:type==='bar'?4:undefined,fill:type==='line',tension:.35,pointBackgroundColor:color,pointRadius:3}]},
-    options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`${pre}${Number(c.parsed.y).toFixed(2)}`}}},scales:{x:SC,y:SC}}});
-}
-function renderCharts(rows){
-  const labels=rows.map(r=>r.date_start?.slice(5)||'');
-  const pr=rows.map(r=>parseR(r));
-  mkChart('cSpend',labels,rows.map(r=>+(r.spend||0)),'#f97316','bar','₹');
-  mkChart('cCTR',labels,rows.map(r=>+(r.ctr||0)),'#38bdf8','line','');
-  mkChart('cClicks',labels,rows.map(r=>+(r.clicks||0)),'#a78bfa','bar','');
-  mkChart('cCPM',labels,rows.map(r=>+(r.cpm||0)),'#34d399','line','₹');
-  mkChart('cATC',labels,pr.map(r=>r.atc||0),'#f59e0b','bar','');
-  mkChart('cPurch',labels,pr.map(r=>r.purch||0),'#22c55e','bar','');
-}
-
-// ── BENCHMARK ──
-function bSt(v,good,warn,hib=false){
-  if(v==null||isNaN(v)||v===0)return{c:'si',d:'di',l:'No data'};
-  if(hib)return v>=good?{c:'sg',d:'dg',l:'Good'}:v>=warn?{c:'sw',d:'dw',l:'Average'}:{c:'sb',d:'db',l:'Low'};
-  return v<=good?{c:'sg',d:'dg',l:'Good'}:v<=warn?{c:'sw',d:'dw',l:'Average'}:{c:'sb',d:'db',l:'High'};
-}
-const INF={c:'si',d:'di',l:'Info'};
-function bRow(metric,display,bench,st){
-  return`<div class="brow">
-    <div class="bm">${metric}</div><div class="bd">${bench}</div>
-    <div class="bv" style="color:${st.c==='sg'?'var(--good)':st.c==='sb'?'var(--bad)':st.c==='sw'?'var(--warn)':'var(--text)'}">${display}</div>
-    <div class="bs ${st.c}"><div class="dot ${st.d}"></div>${st.l}</div>
-  </div>`;
-}
-function bSec(t){return`<div class="bench-sec">${t}</div>`;}
-function renderBench(s){
-  const c2p=s.atc&&s.purch?(s.purch/s.atc*100):null;
-  const cl2c=s.linkClicks&&s.atc?(s.atc/s.linkClicks*100):null;
-  const lpDrop=s.linkClicks&&s.lpv?((s.linkClicks-s.lpv)/s.linkClicks*100):null;
-  let h='';
-  h+=bSec('TRAFFIC & DELIVERY');
-  h+=bRow('CTR — Link Click-Through',pct(s.ctr),'> 1.5% great · 0.5–1.5% ok · < 0.5% low',bSt(s.ctr,1.5,0.5,true));
-  h+=bRow('CPM — Cost per 1,000 Impressions',`₹${fN(s.cpm)}`,'< ₹100 good · ₹100–200 avg · > ₹200 high',bSt(s.cpm,100,200));
-  h+=bRow('CPC — Cost per Click',`₹${fN(s.cpc)}`,'< ₹15 good · ₹15–30 avg · > ₹30 high',bSt(s.cpc,15,30));
-  h+=bRow('Frequency',fN(s.frequency),'< 2.5 good · 2.5–4 monitor · > 4 fatigue risk',bSt(s.frequency,2.5,4));
-  h+=bRow('Reach',fI(s.reach),'Unique accounts reached',INF);
-  h+=bSec('FUNNEL');
-  h+=bRow('Link Clicks',fI(s.linkClicks),'Clicks to your website URL',INF);
-  h+=bRow('Landing Page Views',fI(s.lpv),'Should be close to link clicks',INF);
-  h+=bRow('LP Drop-off Rate',lpDrop!=null?pct(lpDrop):'—','< 20% ok · > 40% fix site speed',lpDrop!=null?bSt(lpDrop,20,40):INF);
-  h+=bRow('Add to Cart',fI(s.atc),'Funnel volume',INF);
-  h+=bRow('Checkouts Initiated',fI(s.chk),'Funnel volume',INF);
-  h+=bRow('Add Payment Info',fI(s.pmt),'Funnel volume',INF);
-  h+=bRow('Purchases',fI(s.purch),'Primary conversion',INF);
-  h+=bRow('Click → Cart Rate',cl2c!=null?pct(cl2c):'—','> 3% good · 1–3% avg · < 1% low',bSt(cl2c,3,1,true));
-  h+=bRow('Cart → Purchase Rate',c2p!=null?pct(c2p):'—','> 10% good · 5–10% avg · < 5% low',bSt(c2p,10,5,true));
-  h+=bSec('EFFICIENCY');
-  h+=bRow('Amount Spent',`₹${fN(s.spend)}`,'Check budget pacing',INF);
-  h+=bRow('Cost per Purchase',s.cpr?`₹${fN(s.cpr)}`:'—','< ₹500 good · ₹500–1,500 avg · > ₹1,500 high',bSt(s.cpr,500,1500));
-  $('benchGrid').innerHTML=h;
-}
-
-// ── AI RECS ──
-async function getAI(){
-  if(!lastSum){alert('Load data first');return;}
-  if(!AI_KEY){
-    const k=window.prompt('Enter your Anthropic API key (sk-ant-...) to generate AI recommendations.\nThis is kept in memory only for this browser tab — it is never saved to the page or the repo.');
-    if(!k){return;}
-    AI_KEY=k.trim();
-  }
-  $('aiBt').disabled=true;$('aiBt').innerHTML='<span class="sp"></span>ANALYZING...';
-  $('aiOut').style.display='none';
-  const s=lastSum;
-  const cLines=lastCamps.map(c=>`• ${c.campaign_name} [${c.objLabel}]: ₹${fN(c.spend)} spend, CTR ${pct(c.ctr)}, CPC ₹${fN(c.cpc)}, ATC ${c.atc}, Purchases ${c.purch}`).join('\n');
-  const prompt=`Meta Ads — ${DC[1].label}
-Spend: ₹${fN(s.spend)} | Impressions: ${fI(s.impressions)} | Reach: ${fI(s.reach)} | Frequency: ${fN(s.frequency)}
-Link Clicks: ${fI(s.linkClicks)} | CTR: ${pct(s.ctr)} | CPC: ₹${fN(s.cpc)} | CPM: ₹${fN(s.cpm)}
-LP Views: ${fI(s.lpv)} | Add to Cart: ${fI(s.atc)} | Checkouts: ${fI(s.chk)} | Purchases: ${fI(s.purch)}
-Cost/Purchase: ${s.cpr?`₹${fN(s.cpr)}`:'—'} | Cart→Purchase: ${s.atc&&s.purch?pct(s.purch/s.atc*100):'—'} | Click→Cart: ${s.linkClicks&&s.atc?pct(s.atc/s.linkClicks*100):'—'}
-
-Active Campaigns:
-${cLines||'No campaign data'}`;
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':AI_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',max_tokens:1200,
-        system:'You are an expert Meta Ads performance marketer for One Good Object, an Indian e-commerce brand. Analyze full-funnel data. Give exactly 5 specific, prioritized, actionable recommendations. Reference actual numbers. Number each point. Be direct — no fluff.',
-        messages:[{role:'user',content:`Analyze and give 5 recommendations:\n\n${prompt}`}]
-      })
-    });
-    const j=await res.json();
-    if(j.error){AI_KEY='';throw new Error(j.error.message||JSON.stringify(j.error));}
-    $('aiTxt').textContent=j.content?.[0]?.text||'No response.';
-    $('aiOut').style.display='block';
-  }catch(e){$('aiTxt').textContent='Error: '+e.message;$('aiOut').style.display='block';}
-  $('aiBt').disabled=false;$('aiBt').textContent='REGENERATE →';
-}
-
-// ── TABS ──
-function sw(name,el){
-  ['overview','campaigns','trends','benchmark','ai','guide'].forEach(t=>{$(`t-${t}`).style.display=t===name?'block':'none';});
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-}
-
-// ── AUTO LOAD ──
-window.onload=()=>{ loadData(); };
-</script>
+        const mainChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+                datasets: [
+                    {
+                        label: 'Acquisitions (Purchases)',
+                        data: [120, 190, 150, 320, 280, 450, 410],
+                        borderColor: '#00f3ff',
+                        backgroundColor: gradientCyan,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#02010a',
+                        pointBorderColor: '#00f3ff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4 // Smooth curves
+                    },
+                    {
+                        label: 'Ad Spend (x100)',
+                        data: [80, 120, 200, 250, 210, 310, 380],
+                        borderColor: '#ff00ff',
+                        backgroundColor: gradientMagenta,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#02010a',
+                        pointBorderColor: '#ff00ff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        display: false // We built custom legend in HTML
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(5, 5, 15, 0.8)',
+                        titleFont: { family: 'Rajdhani', size: 16 },
+                        bodyFont: { family: 'Inter', size: 13 },
+                        padding: 12,
+                        borderColor: 'rgba(0, 243, 255, 0.3)',
+                        borderWidth: 1,
+                        displayColors: true,
+                        boxPadding: 4
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)',
+                            drawBorder: false,
+                        },
+                        ticks: {
+                            color: '#9ca3af'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)',
+                            drawBorder: false,
+                            borderDash: [5, 5]
+                        },
+                        ticks: {
+                            color: '#9ca3af',
+                            stepSize: 100
+                        }
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>
