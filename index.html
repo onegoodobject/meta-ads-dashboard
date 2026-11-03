@@ -1,824 +1,222 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>One Good Object — Meta Ads</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#08080f;--surface:rgba(255,255,255,0.03);--border:rgba(255,255,255,0.08);
-  --orange:#f97316;--od:rgba(249,115,22,0.10);--ob:rgba(249,115,22,0.3);
-  --text:#f1f5f9;--muted:#64748b;--good:#22c55e;--warn:#f59e0b;--bad:#ef4444;
-}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One Good Object | Dashboard</title>
+    <style>
+        :root { --bg-dark: #0d0d0d; --card-bg: #141414; --border-color: #2a2a2a; --text-main: #f5f5f5; --text-muted: #888; --brand-yellow: #ffb800; --success-green: #00e676; --danger-red: #ff3d00; --warning-orange: #ff9100; }
+        body { font-family: 'SF Mono', 'Roboto Mono', Consolas, monospace; background-color: var(--bg-dark); color: var(--text-main); margin: 0; padding: 30px; font-size: 13px; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h1 { margin: 0; font-size: 16px; font-weight: normal; }
+        .header h1 span { color: var(--text-muted); font-size: 12px; display: block; margin-top: 5px; }
+        .badge-live { border: 1px solid var(--success-green); color: var(--success-green); padding: 4px 10px; border-radius: 20px; font-size: 12px; }
+        
+        .controls-wrapper { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+        .date-section { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .date-label { color: var(--text-muted); letter-spacing: 1px; }
+        .date-display { background: var(--bg-dark); border: 1px solid var(--border-color); padding: 8px 15px; border-radius: 6px; color: var(--brand-yellow); }
+        .compare-text { color: var(--text-muted); font-size: 11px; margin-left: 5px; }
+        
+        .preset-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+        .preset-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 12px; border-radius: 20px; cursor: pointer; font-family: inherit; font-size: 12px; transition: 0.2s; }
+        .preset-btn:hover { border-color: var(--text-muted); }
+        .preset-btn.active { border-color: var(--brand-yellow); color: var(--brand-yellow); }
+        
+        h2 { font-size: 12px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 20px; font-weight: normal; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 40px; }
+        .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; }
+        .card-title { font-size: 12px; color: var(--text-muted); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .card-value { font-size: 24px; font-weight: bold; margin-bottom: 10px; display: flex; align-items: baseline; gap: 10px; }
+        .card-sub { font-size: 11px; color: var(--text-muted); }
+        
+        .trend-indicator { font-size: 12px; font-weight: normal; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.05); }
+        .text-green { color: var(--success-green); }
+        .text-red { color: var(--danger-red); }
+        .text-yellow { color: var(--brand-yellow); }
+        .text-muted { color: var(--text-muted); }
+        
+        .funnel-container { display: flex; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 40px; }
+        .funnel-step { flex: 1; padding: 25px 20px; border-right: 1px solid var(--border-color); }
+        .funnel-step:last-child { border-right: none; }
+        .f-title { font-size: 10px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 15px; letter-spacing: 1px; }
+        .f-value { font-size: 20px; font-weight: bold; margin-bottom: 5px; }
+        .f-percent { font-size: 11px; color: var(--text-muted); margin-bottom: 20px; height: 15px; }
+        .progress-bar { height: 2px; background: #333; width: 100%; }
+        .progress-fill { height: 100%; background: var(--brand-yellow); transition: width 0.5s ease; }
+        .fill-green { background: var(--success-green); }
+        
+        .table-container { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; overflow-x: auto; margin-bottom: 40px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 18px 20px; border-bottom: 1px solid var(--border-color); }
+        th { color: var(--text-muted); font-size: 11px; font-weight: normal; text-transform: uppercase; letter-spacing: 1px; }
+        tr:last-child td { border-bottom: none; }
+        .col-metric { color: var(--text-muted); }
+        .col-value { font-weight: bold; }
+        .col-bench { color: var(--text-muted); }
+        .col-notes { color: var(--text-muted); font-size: 11px; }
+        
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; white-space: nowrap; }
+        .badge-good { background: rgba(0, 230, 118, 0.1); color: var(--success-green); }
+        .badge-watch { background: rgba(255, 145, 0, 0.1); color: var(--warning-orange); }
+        .badge-bad { background: rgba(255, 61, 0, 0.1); color: var(--danger-red); }
+        .badge-none { color: var(--text-muted); }
 
-/* ── DASH LAYOUT ── */
-#dash{padding:24px 30px;max-width:1480px;margin:0 auto}
-.topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:14px}
-.ttitle{font-family:'Space Mono',monospace;font-size:19px;font-weight:700}
-.tsub{font-size:12px;color:var(--muted);margin-top:3px}
-.badge{font-size:10px;letter-spacing:4px;color:var(--orange);text-transform:uppercase;margin-bottom:14px}
-.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.btn-g{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:7px 16px;color:#94a3b8;font-size:13px;cursor:pointer;transition:all .15s}
-.btn-g:hover{border-color:rgba(255,255,255,0.2);color:var(--text)}
-.btn-g.active-compare{background:var(--od);border-color:var(--ob);color:var(--orange)}
-.btn-o{background:var(--orange);border:none;border-radius:8px;padding:9px 20px;color:#08080f;font-size:13px;font-weight:700;cursor:pointer;font-family:'Space Mono',monospace}
-.btn-o:disabled{opacity:.5;cursor:not-allowed}
-
-/* ── DATE PICKERS ── */
-.dpicker-row{display:flex;align-items:center;gap:8px;margin-bottom:24px;flex-wrap:wrap}
-.dpicker-row .vs-lbl{font-size:12px;color:var(--muted);font-weight:600}
-.dw{position:relative}
-.dbtn{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:7px 14px;color:var(--text);font-size:13px;cursor:pointer;min-width:170px;white-space:nowrap}
-.dbtn:hover,.dbtn.cmp-active{border-color:var(--ob)}
-.dbtn.cmp-active{background:var(--od)}
-.cal-icon{width:13px;height:13px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.ddrop{display:none;position:absolute;top:calc(100% + 6px);left:0;background:#0d1520;border:1px solid var(--border);border-radius:10px;z-index:300;min-width:265px;box-shadow:0 20px 40px rgba(0,0,0,.8)}
-.ddrop.open{display:flex;flex-direction:column}
-.preset-list{padding:6px 0;border-bottom:1px solid var(--border)}
-.pi{padding:8px 16px;font-size:13px;cursor:pointer;color:#94a3b8;transition:background .1s}
-.pi:hover,.pi.sel{background:var(--od);color:var(--orange)}
-.calwrap{padding:14px}
-.cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.cal-nav button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:17px;padding:2px 7px;border-radius:4px;line-height:1}
-.cal-nav button:hover{color:var(--text)}
-.cal-mth{font-size:13px;font-weight:600}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
-.cal-dow{font-size:10px;color:var(--muted);padding:3px 0;font-weight:600}
-.cd{font-size:12px;padding:5px 2px;border-radius:4px;cursor:pointer;color:#94a3b8;display:flex;align-items:center;justify-content:center;min-height:26px}
-.cd:hover:not(.emp):not(.fut){background:rgba(255,255,255,0.08);color:var(--text)}
-.cd.tod{color:var(--orange);font-weight:700}
-.cd.sel{background:var(--orange)!important;color:#08080f!important;font-weight:700}
-.cd.inr{background:var(--od);color:var(--orange)}
-.cd.emp,.cd.fut{opacity:.2;pointer-events:none}
-.cal-hint{font-size:11px;color:var(--muted);text-align:center;margin-top:7px;min-height:15px}
-.cal-apply{width:100%;margin-top:8px;background:var(--orange);color:#08080f;border:none;border-radius:6px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Space Mono',monospace;display:none}
-
-/* ── TABS ── */
-.tabs{display:flex;gap:7px;margin-bottom:24px;flex-wrap:wrap}
-.tab{padding:7px 17px;border-radius:6px;cursor:pointer;font-size:13px;border:1px solid transparent;color:var(--muted);transition:all .15s}
-.tab.active{background:var(--od);color:var(--orange);border-color:var(--ob)}
-.tab:hover:not(.active){color:var(--text)}
-
-/* ── STATS GRID ── */
-.section-title { font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin: 0 0 16px 2px; display: flex; align-items: center; gap: 10px; }
-.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px}
-.sc{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 18px}
-.sc.acc{background:var(--od);border-color:var(--ob)}
-.sc-lbl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
-.sc-val{font-family:'Space Mono',monospace;font-size:20px;font-weight:700}
-.sc.acc .sc-val{color:var(--orange)}
-.sc-hint{font-size:11px;margin-top:4px}
-.sc-hint.g{color:var(--good)}.sc-hint.w{color:var(--warn)}.sc-hint.b{color:var(--bad)}
-.sc-cmp{font-size:11px;margin-top:3px;display:flex;align-items:center;gap:4px}
-.delta-up{color:var(--good)}.delta-dn{color:var(--bad)}.delta-neu{color:var(--muted)}
-
-/* ── TABLE ── */
-.twrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.thead-bar{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
-.thead-title{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
-.active-pill{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:20px;padding:2px 11px;font-size:11px;color:var(--good)}
-.tscroll{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:12px;min-width:1100px}
-thead tr{border-bottom:1px solid var(--border)}
-th{padding:10px 13px;text-align:left;color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;font-weight:600}
-td{padding:10px 13px;border-bottom:1px solid rgba(255,255,255,0.03);white-space:nowrap;font-family:'Space Mono',monospace;font-size:12px}
-tbody tr.camp-row:hover td{background:rgba(255,255,255,0.02)}
-tbody tr:last-child td{border-bottom:none}
-tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:700;background:rgba(249,115,22,0.04)}
-
-/* Ad Row Styles */
-.ad-row td { background: rgba(0,0,0,0.3); color: var(--muted); font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.01); transition: all 0.2s; }
-.ad-row:hover td { background: rgba(255,255,255,0.05); color: var(--text); }
-.ad-name { padding-left: 36px !important; font-family: 'DM Sans', sans-serif; max-width: 220px; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; }
-.ad-icon { width: 8px; height: 8px; border-left: 1px solid var(--muted); border-bottom: 1px solid var(--muted); margin-right: 8px; margin-bottom: 4px; display: inline-block; opacity: 0.5; }
-.tgl-btn { cursor:pointer; color:var(--orange); font-family:monospace; margin-right:8px; background:rgba(249,115,22,0.1); padding:2px 6px; border-radius:4px; display:inline-block; text-align:center; min-width: 22px;}
-
-.td-name{font-family:'DM Sans',sans-serif;max-width:220px;overflow:hidden;text-overflow:ellipsis;font-weight:500; font-size:13px; display: flex; align-items: center;}
-.td-obj{font-family:'DM Sans',sans-serif;font-size:11px}
-.obj-pill{display:inline-block;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:20px;padding:2px 9px;color:#818cf8;font-size:10px;white-space:nowrap}
-.td-spend{color:var(--orange)}
-.cg{color:var(--good)}.cw{color:var(--warn)}.cb{color:var(--bad)}
-.ec{padding:40px;text-align:center;color:var(--muted);font-family:'DM Sans',sans-serif}
-
-/* ── CHARTS ── */
-.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
-@media(max-width:700px){.charts-grid{grid-template-columns:1fr}}
-.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px}
-.panel-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
-
-/* ── BENCHMARK ── */
-.bench-sec{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin:22px 0 8px 2px}
-.brow{display:grid;grid-template-columns:200px 1fr 130px 85px;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:12px 16px;margin-bottom:7px}
-.bm{font-size:13px;font-weight:500}
-.bd{font-size:11px;color:var(--muted)}
-.bv{font-family:'Space Mono',monospace;font-size:13px;font-weight:700}
-.bs{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;justify-content:flex-end}
-.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.sg{color:var(--good)}.dg{background:var(--good)}
-.sw{color:var(--warn)}.dw{background:var(--warn)}
-.sb{color:var(--bad)}.db{background:var(--bad)}
-.si{color:var(--muted)}.di{background:var(--muted)}
-
-/* ── AI ── */
-.ai-intro{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:18px}
-.ai-intro p{font-size:14px;color:var(--muted);margin-bottom:14px}
-#aiOut{display:none;background:var(--od);border:1px solid var(--ob);border-radius:10px;padding:24px}
-#aiLbl{font-size:10px;color:var(--orange);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px}
-#aiTxt{font-size:13px;color:#cbd5e1;line-height:1.7;}
-.ai-h4 { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--orange); margin: 24px 0 12px 0; border-bottom: 1px solid var(--border); padding-bottom: 6px;}
-.ai-h4:first-child { margin-top: 0; }
-.ai-bullet { margin-bottom: 12px; padding-left: 20px; position: relative; }
-.ai-bullet::before { content: "•"; color: var(--muted); font-weight: bold; position: absolute; left: 0; }
-.ai-bullet.indent { margin-left: 15px; }
-
-/* ── SPINNER ── */
-.sp{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.12);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite;margin-right:5px;vertical-align:middle}
-@keyframes spin{to{transform:rotate(360deg)}}
-</style>
+        .recommendation-box { background: rgba(255, 184, 0, 0.05); border: 1px solid var(--brand-yellow); border-radius: 8px; padding: 20px; margin-bottom: 40px; line-height: 1.6; }
+        .recommendation-box h3 { margin-top: 0; color: var(--brand-yellow); font-size: 14px; text-transform: uppercase; }
+        .rec-item { margin-bottom: 8px; }
+        
+        @media (max-width: 1000px) { .funnel-container { flex-direction: column; } .funnel-step { border-right: none; border-bottom: 1px solid var(--border-color); } }
+    </style>
 </head>
 <body>
+    <div class="header">
+        <h1>One Good Object<span>Meta Ads Dashboard</span></h1>
+        <div class="badge-live">Live Data Active</div>
+    </div>
 
-<!-- DASHBOARD -->
-<div id="dash">
-  <div class="topbar">
-    <div>
-      <div class="badge">One Good Object</div>
-      <div class="ttitle mono">Meta Ads Dashboard</div>
-      <div class="tsub" id="lastFetched">—</div>
-    </div>
-    <div class="actions">
-      <button class="btn-g" id="cmpBtn" onclick="toggleCompare()">⇄ Compare</button>
-      <button class="btn-g" onclick="loadData()"><span id="rfSp" style="display:none" class="sp"></span>Refresh</button>
-    </div>
-  </div>
-
-  <!-- DATE ROW -->
-  <div class="dpicker-row">
-    <!-- PRIMARY DATE -->
-    <div class="dw" id="dWrap1">
-      <div class="dbtn" onclick="toggleCal(1)">
-        <svg class="cal-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <span id="dLabel1">Yesterday</span>
-      </div>
-      <div class="ddrop" id="dDrop1">
-        <div class="preset-list" id="plist1"></div>
-        <div class="calwrap">
-          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Custom Date / Range</div>
-          <div class="cal-nav">
-            <button onclick="mth(1,-1)">‹</button>
-            <span class="cal-mth" id="calMth1"></span>
-            <button onclick="mth(1,1)">›</button>
-          </div>
-          <div class="cal-grid" id="calGrid1"></div>
-          <div class="cal-hint" id="calHint1">Click date or range start</div>
-          <button class="cal-apply" id="calApply1" onclick="applyCustom(1)">APPLY →</button>
-        </div>
-      </div>
-    </div>
-    <!-- COMPARE DATE -->
-    <div id="cmpRow" style="display:none;align-items:center;gap:8px">
-      <span class="vs-lbl">vs</span>
-      <div class="dw" id="dWrap2">
-        <div class="dbtn cmp-active" onclick="toggleCal(2)">
-          <svg class="cal-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <span id="dLabel2">Previous Period</span>
-        </div>
-        <div class="ddrop" id="dDrop2">
-          <div class="preset-list" id="plist2"></div>
-          <div class="calwrap">
-            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Custom Date / Range</div>
-            <div class="cal-nav">
-              <button onclick="mth(2,-1)">‹</button>
-              <span class="cal-mth" id="calMth2"></span>
-              <button onclick="mth(2,1)">›</button>
+    <div class="controls-wrapper">
+        <div class="date-section">
+            <span class="date-label">DATE RANGE</span>
+            <div style="display:flex; align-items:center;">
+                <div class="date-display" id="date_display">Loading...</div>
+                <span class="compare-text" id="compare_text">vs ...</span>
             </div>
-            <div class="cal-grid" id="calGrid2"></div>
-            <div class="cal-hint" id="calHint2">Click date or range start</div>
-            <button class="cal-apply" id="calApply2" onclick="applyCustom(2)">APPLY →</button>
-          </div>
+            <div class="preset-btns">
+                <button class="preset-btn" id="btn-today" onclick="updateView('today')">Today</button>
+                <button class="preset-btn active" id="btn-yesterday" onclick="updateView('yesterday')">Yesterday</button>
+                <button class="preset-btn" id="btn-last_2_days" onclick="updateView('last_2_days')">Last 2 Days</button>
+                <button class="preset-btn" id="btn-last_3_days" onclick="updateView('last_3_days')">Last 3 Days</button>
+                <button class="preset-btn" id="btn-last_7_days" onclick="updateView('last_7_days')">Last 7 Days</button>
+                <button class="preset-btn" id="btn-last_30_days" onclick="updateView('last_30_days')">Last 30 Days</button>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 
-  <!-- TABS -->
-  <div class="tabs">
-    <div class="tab active" onclick="sw('overview',this)">Overview</div>
-    <div class="tab" onclick="sw('campaigns',this)">Campaigns & Ads</div>
-    <div class="tab" onclick="sw('trends',this)">Trends</div>
-    <div class="tab" onclick="sw('benchmark',this)">📊 Benchmark</div>
-    <div class="tab" onclick="sw('ai',this)">🤖 AI Engine</div>
-  </div>
+    <div class="recommendation-box">
+        <h3>Daily AI Diagnostic</h3>
+        <div id="recommendations_html"></div>
+    </div>
 
-  <!-- OVERVIEW TAB -->
-  <div id="t-overview">
-    <h3 class="section-title">General Account Overview</h3>
-    <div class="sgrid" id="sGridAccount"></div>
-    <div id="campGridsContainer"></div>
-  </div>
+    <h2>Performance Overview</h2>
+    <div class="grid">
+        <div class="card" style="border-color: var(--brand-yellow); background: rgba(255,184,0,0.02);">
+            <div class="card-title">Amount Spent</div>
+            <div class="card-value text-yellow"><span id="spend_val">-</span> <span class="trend-indicator" id="spend_trend"></span></div>
+            <div class="card-sub">Total ad spend</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Reach</div>
+            <div class="card-value"><span id="reach_val">-</span> <span class="trend-indicator" id="reach_trend"></span></div>
+            <div class="card-sub">Unique accounts</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Impressions</div>
+            <div class="card-value"><span id="impressions_val">-</span> <span class="trend-indicator" id="impressions_trend"></span></div>
+            <div class="card-sub">Freq: <span id="freq_val_sub">-</span></div>
+        </div>
+        <div class="card">
+            <div class="card-title">CPM</div>
+            <div class="card-value"><span id="cpm_val">-</span> <span class="trend-indicator" id="cpm_trend"></span></div>
+            <div class="card-sub">Cost per 1K impressions</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Link Clicks</div>
+            <div class="card-value"><span id="clicks_val">-</span> <span class="trend-indicator" id="clicks_trend"></span></div>
+            <div class="card-sub">All clicks</div>
+        </div>
+        <div class="card">
+            <div class="card-title">CTR</div>
+            <div class="card-value text-green"><span id="ctr_val">-</span> <span class="trend-indicator" id="ctr_trend"></span></div>
+            <div class="card-sub">Link click-through rate</div>
+        </div>
+        <div class="card">
+            <div class="card-title">CPC</div>
+            <div class="card-value"><span id="cpc_val">-</span> <span class="trend-indicator" id="cpc_trend"></span></div>
+            <div class="card-sub">Cost per link click</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Purchases</div>
+            <div class="card-value text-green"><span id="pur_val_top">-</span> <span class="trend-indicator" id="pur_trend"></span></div>
+            <div class="card-sub">Website purchases</div>
+        </div>
+    </div>
 
-  <div id="t-campaigns" style="display:none">
-    <div class="twrap">
-      <div class="thead-bar">
-        <span class="thead-title">Campaigns & Ads Breakdown</span>
-        <span class="active-pill" id="campPeriodLabel">Selected Period</span>
-      </div>
-      <div class="tscroll">
+    <h2>Conversion Funnel</h2>
+    <div class="funnel-container">
+        <div class="funnel-step"><div class="f-title">Impressions</div><div class="f-value" id="impressions_val_f">-</div><div class="f-percent">100%</div><div class="progress-bar"><div class="progress-fill" style="width: 100%;"></div></div></div>
+        <div class="funnel-step"><div class="f-title">Landing Views</div><div class="f-value" id="lpv_val">-</div><div class="f-percent"><span id="lpv_rate_val_f">-</span> of clicks</div><div class="progress-bar"><div class="progress-fill" id="lpv_width" style="width: 0%;"></div></div></div>
+        <div class="funnel-step"><div class="f-title">Add to Cart</div><div class="f-value" id="atc_val">-</div><div class="f-percent"><span id="atc_rate_val_f">-</span> of views</div><div class="progress-bar"><div class="progress-fill" id="atc_width" style="width: 0%;"></div></div></div>
+        <div class="funnel-step"><div class="f-title">Checkout</div><div class="f-value" id="chk_val">-</div><div class="f-percent"><span id="chk_rate_val_f">-</span> of cart</div><div class="progress-bar"><div class="progress-fill" id="chk_width" style="width: 0%;"></div></div></div>
+        <div class="funnel-step"><div class="f-title">Payment Info</div><div class="f-value" id="pay_val">-</div><div class="f-percent">-</div><div class="progress-bar"><div class="progress-fill" style="width: 100%;"></div></div></div>
+        <div class="funnel-step"><div class="f-title">Purchases</div><div class="f-value" id="pur_val">-</div><div class="f-percent"><span id="pur_rate_val_f">-</span> of checkout</div><div class="progress-bar"><div class="progress-fill fill-green" id="pur_width" style="width: 0%;"></div></div></div>
+    </div>
+
+    <h2>Full Breakdown</h2>
+    <div class="table-container">
         <table>
-          <thead><tr>
-            <th>Name</th><th>Objective</th>
-            <th>Spent ₹</th><th>Impressions</th><th>Reach</th><th>Frequency</th>
-            <th>Link Clicks</th><th>CTR%</th><th>CPC ₹</th><th>CPM ₹</th>
-            <th>LP Views</th><th>Add to Cart</th><th>Checkouts</th>
-            <th>Pmt Info</th><th>Purchases</th><th>Queries/Leads</th><th>Cost/Result ₹</th>
-          </tr></thead>
-          <tbody id="cTbl"></tbody>
-          <tfoot id="cFoot"></tfoot>
+            <thead><tr><th>Metric</th><th>Value</th><th>Benchmark</th><th>Status</th><th>Notes</th></tr></thead>
+            <tbody>
+                <tr><td class="col-metric">Impressions</td><td class="col-value" id="impressions_val_t">-</td><td class="col-bench">-</td><td><span class="badge-none">-</span></td><td class="col-notes">Total times ads were shown</td></tr>
+                <tr><td class="col-metric">Reach</td><td class="col-value" id="reach_val_t">-</td><td class="col-bench">-</td><td><span class="badge-none">-</span></td><td class="col-notes">Unique accounts that saw the ad</td></tr>
+                <tr><td class="col-metric">Frequency</td><td class="col-value text-green" id="freq_val">-</td><td class="col-bench">&lt; 3x</td><td id="freq_badge">-</td><td class="col-notes">Healthy frequency</td></tr>
+                <tr><td class="col-metric">Link Clicks</td><td class="col-value" id="clicks_val_t">-</td><td class="col-bench">-</td><td><span class="badge-none">-</span></td><td class="col-notes">Clicks to your website</td></tr>
+                <tr><td class="col-metric">CTR (Link)</td><td class="col-value text-green" id="ctr_val_t">-</td><td class="col-bench">&gt; 1%</td><td id="ctr_badge">-</td><td class="col-notes">Strong click-through rate</td></tr>
+                <tr><td class="col-metric">CPC</td><td class="col-value text-green" id="cpc_val_t">-</td><td class="col-bench">&lt; ₹15</td><td id="cpc_badge">-</td><td class="col-notes">Cost per click</td></tr>
+                <tr><td class="col-metric">CPM</td><td class="col-value text-green" id="cpm_table">-</td><td class="col-bench">₹150-400</td><td id="cpm_badge">-</td><td class="col-notes">Cost to reach 1,000 people</td></tr>
+                <tr><td class="col-metric">Landing Page Views</td><td class="col-value" id="lpv_val_t">-</td><td class="col-bench">-</td><td><span class="badge-none">-</span></td><td class="col-notes">People who loaded your landing page</td></tr>
+                <tr><td class="col-metric">LPV Rate</td><td class="col-value" id="lpv_rate_val">-</td><td class="col-bench">&gt; 60%</td><td id="lpv_badge">-</td><td class="col-notes">Landing page load rate vs clicks</td></tr>
+                <tr><td class="col-metric">Add to Cart</td><td class="col-value" id="atc_val_t">-</td><td class="col-bench">-</td><td><span class="badge-none">-</span></td><td class="col-notes">Products added to cart</td></tr>
+                <tr><td class="col-metric">ATC Rate</td><td class="col-value text-green" id="atc_rate_val">-</td><td class="col-bench">&gt; 3%</td><td id="atc_badge">-</td><td class="col-notes">Add-to-cart rate from landing page views</td></tr>
+                <tr><td class="col-metric">Checkouts Initiated</td><td class="col-value" id="chk_val_t">-</td><td class="col-bench">-</td><td><span class="badge-none">-</span></td><td class="col-notes">Users who started checkout</td></tr>
+                <tr><td class="col-metric">Checkout Rate</td><td class="col-value" id="chk_rate_val">-</td><td class="col-bench">&gt; 50%</td><td id="chk_badge">-</td><td class="col-notes">Checkout rate from cart adds</td></tr>
+                <tr><td class="col-metric">Payment Info Added</td><td class="col-value" id="pay_val_t">-</td><td class="col-bench">-</td><td><span class="badge-none">-</span></td><td class="col-notes">Users who entered payment details</td></tr>
+                <tr><td class="col-metric">Purchases</td><td class="col-value text-green" id="pur_val_t">-</td><td class="col-bench">-</td><td id="pur_badge">-</td><td class="col-notes">Completed website purchases</td></tr>
+                <tr><td class="col-metric">Cost per Purchase</td><td class="col-value" id="cpp_val">-</td><td class="col-bench">Depends on AOV</td><td><span class="badge-none">-</span></td><td class="col-notes">Total spend &divide; purchases</td></tr>
+                <tr><td class="col-metric">Amount Spent</td><td class="col-value" id="spend_table">-</td><td class="col-bench">-</td><td><span class="badge-none">-</span></td><td class="col-notes">Total ad spend for period</td></tr>
+            </tbody>
         </table>
-      </div>
     </div>
-  </div>
 
-  <div id="t-trends" style="display:none">
-    <div class="charts-grid">
-      <div class="panel"><div class="panel-title">Spend ₹</div><canvas id="cSpend" height="200"></canvas></div>
-      <div class="panel"><div class="panel-title">CTR % (Link)</div><canvas id="cCTR" height="200"></canvas></div>
-      <div class="panel"><div class="panel-title">Link Clicks</div><canvas id="cClicks" height="200"></canvas></div>
-      <div class="panel"><div class="panel-title">CPM ₹</div><canvas id="cCPM" height="200"></canvas></div>
-      <div class="panel"><div class="panel-title">Add to Cart</div><canvas id="cATC" height="200"></canvas></div>
-      <div class="panel"><div class="panel-title">Queries / Leads</div><canvas id="cLeads" height="200"></canvas></div>
-    </div>
-  </div>
+    <script>
+        const dashData = {"today": {"date_display": "03/11/2026 &rarr; 03/11/2026", "compare_text": "vs 02/11 - 02/11", "recommendations_html": "<div class='rec-item'>\ud83d\udfe1 <strong>Low Intent:</strong> Low ATC rate (0.0%). Check product offer.</div>", "spend_val": "\u20b91488", "spend_trend": "<span class='trend-\u2193 text-muted'>\u2193 56.1%</span>", "spend_table": "\u20b91488.46", "reach_val": "3,254", "reach_trend": "<span class='trend-\u2193 text-red'>\u2193 69.3%</span>", "impressions_val": "3,783", "impressions_trend": "<span class='trend-\u2193 text-red'>\u2193 68.1%</span>", "freq_val": "1.16x", "freq_badge": "<span class='badge badge-good'>Good</span>", "cpm_val": "\u20b9393", "cpm_trend": "<span class='trend-\u2191 text-red'>\u2191 37.5%</span>", "cpm_table": "\u20b9393.46", "cpm_badge": "<span class='badge badge-good'>Good</span>", "clicks_val": "60", "clicks_trend": "<span class='trend-\u2193 text-red'>\u2193 59.2%</span>", "ctr_val": "1.59%", "ctr_trend": "<span class='trend-\u2191 text-green'>\u2191 27.9%</span>", "ctr_badge": "<span class='badge badge-good'>Good</span>", "cpc_val": "\u20b924.81", "cpc_trend": "<span class='trend-\u2191 text-red'>\u2191 7.5%</span>", "cpc_badge": "<span class='badge badge-bad'>Action needed</span>", "pur_val": "0", "pur_trend": "", "pur_badge": "<span class='badge badge-bad'>Action needed</span>", "cpp_val": "\u20b90", "lpv_val": "39", "lpv_rate_val": "65.00%", "lpv_badge": "<span class='badge badge-good'>Good</span>", "lpv_width": "65.0%", "atc_val": "0", "atc_rate_val": "0.00%", "atc_badge": "<span class='badge badge-bad'>Action needed</span>", "atc_width": "0.0%", "chk_val": "0", "chk_rate_val": "0%", "chk_badge": "<span class='badge badge-watch'>Watch</span>", "chk_width": "0%", "pay_val": "0", "pur_rate_val": "0.00%", "pur_width": "0%"}, "yesterday": {"date_display": "02/11/2026 &rarr; 02/11/2026", "compare_text": "vs 01/11 - 01/11", "recommendations_html": "<div class='rec-item'>\ud83d\udfe1 <strong>Low Intent:</strong> Low ATC rate (1.4%). Check product offer.</div>", "spend_val": "\u20b93393", "spend_trend": "<span class='trend-\u2193 text-muted'>\u2193 19.8%</span>", "spend_table": "\u20b93392.99", "reach_val": "10,603", "reach_trend": "<span class='trend-\u2191 text-green'>\u2191 21.7%</span>", "impressions_val": "11,857", "impressions_trend": "<span class='trend-\u2191 text-green'>\u2191 16.8%</span>", "freq_val": "1.12x", "freq_badge": "<span class='badge badge-good'>Good</span>", "cpm_val": "\u20b9286", "cpm_trend": "<span class='trend-\u2193 text-green'>\u2193 31.4%</span>", "cpm_table": "\u20b9286.16", "cpm_badge": "<span class='badge badge-good'>Good</span>", "clicks_val": "147", "clicks_trend": "<span class='trend-\u2193 text-red'>\u2193 16.0%</span>", "ctr_val": "1.24%", "ctr_trend": "<span class='trend-\u2193 text-red'>\u2193 28.1%</span>", "ctr_badge": "<span class='badge badge-good'>Good</span>", "cpc_val": "\u20b923.08", "cpc_trend": "<span class='trend-\u2193 text-green'>\u2193 4.6%</span>", "cpc_badge": "<span class='badge badge-bad'>Action needed</span>", "pur_val": "0", "pur_trend": "", "pur_badge": "<span class='badge badge-bad'>Action needed</span>", "cpp_val": "\u20b90", "lpv_val": "141", "lpv_rate_val": "95.92%", "lpv_badge": "<span class='badge badge-good'>Good</span>", "lpv_width": "95.91836734693877%", "atc_val": "2", "atc_rate_val": "1.42%", "atc_badge": "<span class='badge badge-bad'>Action needed</span>", "atc_width": "1.4184397163120568%", "chk_val": "0", "chk_rate_val": "0%", "chk_badge": "<span class='badge badge-watch'>Watch</span>", "chk_width": "0.0%", "pay_val": "0", "pur_rate_val": "0.00%", "pur_width": "0%"}, "last_2_days": {"date_display": "01/11/2026 &rarr; 02/11/2026", "compare_text": "vs 30/10 - 31/10", "recommendations_html": "<div class='rec-item'>\ud83d\udfe1 <strong>Low Intent:</strong> Low ATC rate (1.3%). Check product offer.</div>", "spend_val": "\u20b97626", "spend_trend": "<span class='trend-\u2191 text-muted'>\u2191 25.9%</span>", "spend_table": "\u20b97626.05", "reach_val": "18,016", "reach_trend": "<span class='trend-\u2193 text-red'>\u2193 5.1%</span>", "impressions_val": "22,012", "impressions_trend": "<span class='trend-\u2193 text-red'>\u2193 14.6%</span>", "freq_val": "1.22x", "freq_badge": "<span class='badge badge-good'>Good</span>", "cpm_val": "\u20b9346", "cpm_trend": "<span class='trend-\u2191 text-red'>\u2191 47.4%</span>", "cpm_table": "\u20b9346.45", "cpm_badge": "<span class='badge badge-good'>Good</span>", "clicks_val": "322", "clicks_trend": "<span class='trend-\u2193 text-red'>\u2193 13.9%</span>", "ctr_val": "1.46%", "ctr_trend": "<span class='trend-\u2191 text-green'>\u2191 0.8%</span>", "ctr_badge": "<span class='badge badge-good'>Good</span>", "cpc_val": "\u20b923.68", "cpc_trend": "<span class='trend-\u2191 text-red'>\u2191 46.2%</span>", "cpc_badge": "<span class='badge badge-bad'>Action needed</span>", "pur_val": "0", "pur_trend": "", "pur_badge": "<span class='badge badge-bad'>Action needed</span>", "cpp_val": "\u20b90", "lpv_val": "314", "lpv_rate_val": "97.52%", "lpv_badge": "<span class='badge badge-good'>Good</span>", "lpv_width": "97.51552795031056%", "atc_val": "4", "atc_rate_val": "1.27%", "atc_badge": "<span class='badge badge-bad'>Action needed</span>", "atc_width": "1.2738853503184715%", "chk_val": "0", "chk_rate_val": "0%", "chk_badge": "<span class='badge badge-watch'>Watch</span>", "chk_width": "0.0%", "pay_val": "0", "pur_rate_val": "0.00%", "pur_width": "0%"}, "last_3_days": {"date_display": "31/10/2026 &rarr; 02/11/2026", "compare_text": "vs 28/10 - 30/10", "recommendations_html": "<div class='rec-item'>\ud83d\udfe1 <strong>Low Intent:</strong> Low ATC rate (1.2%). Check product offer.</div>", "spend_val": "\u20b911051", "spend_trend": "<span class='trend-\u2191 text-muted'>\u2191 2.1%</span>", "spend_table": "\u20b911050.75", "reach_val": "26,569", "reach_trend": "<span class='trend-\u2193 text-red'>\u2193 44.5%</span>", "impressions_val": "33,712", "impressions_trend": "<span class='trend-\u2193 text-red'>\u2193 52.3%</span>", "freq_val": "1.27x", "freq_badge": "<span class='badge badge-good'>Good</span>", "cpm_val": "\u20b9328", "cpm_trend": "<span class='trend-\u2191 text-red'>\u2191 114.2%</span>", "cpm_table": "\u20b9327.80", "cpm_badge": "<span class='badge badge-good'>Good</span>", "clicks_val": "505", "clicks_trend": "<span class='trend-\u2193 text-red'>\u2193 29.2%</span>", "ctr_val": "1.50%", "ctr_trend": "<span class='trend-\u2191 text-green'>\u2191 48.6%</span>", "ctr_badge": "<span class='badge badge-good'>Good</span>", "cpc_val": "\u20b921.88", "cpc_trend": "<span class='trend-\u2191 text-red'>\u2191 44.1%</span>", "cpc_badge": "<span class='badge badge-bad'>Action needed</span>", "pur_val": "0", "pur_trend": "<span class='trend-\u2193 text-red'>\u2193 100.0%</span>", "pur_badge": "<span class='badge badge-bad'>Action needed</span>", "cpp_val": "\u20b90", "lpv_val": "482", "lpv_rate_val": "95.45%", "lpv_badge": "<span class='badge badge-good'>Good</span>", "lpv_width": "95.44554455445544%", "atc_val": "6", "atc_rate_val": "1.24%", "atc_badge": "<span class='badge badge-bad'>Action needed</span>", "atc_width": "1.2448132780082988%", "chk_val": "0", "chk_rate_val": "0%", "chk_badge": "<span class='badge badge-watch'>Watch</span>", "chk_width": "0.0%", "pay_val": "0", "pur_rate_val": "0.00%", "pur_width": "0%"}, "last_7_days": {"date_display": "27/10/2026 &rarr; 02/11/2026", "compare_text": "vs 20/10 - 26/10", "recommendations_html": "<div class='rec-item'>\ud83d\udfe1 <strong>Low Intent:</strong> Low ATC rate (1.0%). Check product offer.</div>", "spend_val": "\u20b925447", "spend_trend": "<span class='trend-\u2193 text-muted'>\u2193 6.4%</span>", "spend_table": "\u20b925447.00", "reach_val": "105,558", "reach_trend": "<span class='trend-\u2193 text-red'>\u2193 54.2%</span>", "impressions_val": "161,808", "impressions_trend": "<span class='trend-\u2193 text-red'>\u2193 63.9%</span>", "freq_val": "1.53x", "freq_badge": "<span class='badge badge-good'>Good</span>", "cpm_val": "\u20b9157", "cpm_trend": "<span class='trend-\u2191 text-red'>\u2191 159.1%</span>", "cpm_table": "\u20b9157.27", "cpm_badge": "<span class='badge badge-good'>Good</span>", "clicks_val": "1,648", "clicks_trend": "<span class='trend-\u2193 text-red'>\u2193 38.0%</span>", "ctr_val": "1.02%", "ctr_trend": "<span class='trend-\u2191 text-green'>\u2191 71.7%</span>", "ctr_badge": "<span class='badge badge-good'>Good</span>", "cpc_val": "\u20b915.44", "cpc_trend": "<span class='trend-\u2191 text-red'>\u2191 50.9%</span>", "cpc_badge": "<span class='badge badge-bad'>Action needed</span>", "pur_val": "1", "pur_trend": "<span class='trend-neutral text-muted'>= 0%</span>", "pur_badge": "<span class='badge badge-good'>Good</span>", "cpp_val": "\u20b925447", "lpv_val": "1,383", "lpv_rate_val": "83.92%", "lpv_badge": "<span class='badge badge-good'>Good</span>", "lpv_width": "83.91990291262135%", "atc_val": "14", "atc_rate_val": "1.01%", "atc_badge": "<span class='badge badge-bad'>Action needed</span>", "atc_width": "1.0122921185827911%", "chk_val": "2", "chk_rate_val": "14%", "chk_badge": "<span class='badge badge-watch'>Watch</span>", "chk_width": "14.285714285714285%", "pay_val": "1", "pur_rate_val": "50.00%", "pur_width": "50.0%"}, "last_30_days": {"date_display": "04/10/2026 &rarr; 02/11/2026", "compare_text": "vs 04/09 - 03/10", "recommendations_html": "<div class='rec-item'>\ud83d\udfe1 <strong>Low Intent:</strong> Low ATC rate (0.5%). Check product offer.</div>", "spend_val": "\u20b9107265", "spend_trend": "<span class='trend-\u2191 text-muted'>\u2191 76.1%</span>", "spend_table": "\u20b9107264.90", "reach_val": "546,919", "reach_trend": "<span class='trend-\u2191 text-green'>\u2191 592.9%</span>", "impressions_val": "1,157,947", "impressions_trend": "<span class='trend-\u2191 text-green'>\u2191 534.0%</span>", "freq_val": "2.12x", "freq_badge": "<span class='badge badge-good'>Good</span>", "cpm_val": "\u20b993", "cpm_trend": "<span class='trend-\u2193 text-green'>\u2193 72.2%</span>", "cpm_table": "\u20b992.63", "cpm_badge": "<span class='badge badge-bad'>Action needed</span>", "clicks_val": "8,922", "clicks_trend": "<span class='trend-\u2191 text-green'>\u2191 119.5%</span>", "ctr_val": "0.77%", "ctr_trend": "<span class='trend-\u2193 text-red'>\u2193 65.4%</span>", "ctr_badge": "<span class='badge badge-bad'>Action needed</span>", "cpc_val": "\u20b912.02", "cpc_trend": "<span class='trend-\u2193 text-green'>\u2193 19.8%</span>", "cpc_badge": "<span class='badge badge-good'>Good</span>", "pur_val": "3", "pur_trend": "<span class='trend-\u2193 text-red'>\u2193 62.5%</span>", "pur_badge": "<span class='badge badge-good'>Good</span>", "cpp_val": "\u20b935755", "lpv_val": "7,368", "lpv_rate_val": "82.58%", "lpv_badge": "<span class='badge badge-good'>Good</span>", "lpv_width": "82.58238063214526%", "atc_val": "34", "atc_rate_val": "0.46%", "atc_badge": "<span class='badge badge-bad'>Action needed</span>", "atc_width": "0.4614549402823019%", "chk_val": "54", "chk_rate_val": "159%", "chk_badge": "<span class='badge badge-good'>Good</span>", "chk_width": "100%", "pay_val": "4", "pur_rate_val": "5.56%", "pur_width": "5.555555555555555%"}};
 
-  <div id="t-benchmark" style="display:none"><div id="benchGrid"></div></div>
+        function updateView(period) {
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('btn-' + period).classList.add('active');
 
-  <div id="t-ai" style="display:none">
-    <div class="ai-intro">
-      <p>This Local AI Diagnostic engine calculates custom insights based on funnel drop-offs, spend efficiency, and traffic quality across the entire account and individual ads.</p>
-      <button class="btn-o" id="aiBt" onclick="getAI()">RUN FULL AUDIT →</button>
-    </div>
-    <div id="aiOut">
-      <div id="aiLbl">Full Audit Report</div>
-      <div id="aiTxt"></div>
-    </div>
-  </div>
-</div>
+            const d = dashData[period];
+            if(!d) return;
 
-<script>
-const BASE='https://graph.facebook.com/v20.0';
-const ACCOUNT='2495711530616735';
-
-let charts={};
-let comparing=false;
-let lastSum=null,lastCmpSum=null,lastCamps=[], lastCmpCamps=[], lastAdsByCamp={};
-
-const DC=[null, {type:'preset',preset:'yesterday',label:'Yesterday'}, {type:'preset',preset:'last_7d',label:'Last 7 Days'}];
-const CAL=[null, {y:new Date().getFullYear(),m:new Date().getMonth(),s:null,e:null}, {y:new Date().getFullYear(),m:new Date().getMonth(),s:null,e:null}];
-const $=id=>document.getElementById(id);
-const fN=(n,p='')=>n==null||isNaN(n)||n===''?'—':`${p}${Number(n).toLocaleString('en-IN',{maximumFractionDigits:2})}`;
-const fI=n=>(!n||isNaN(n)||n===0)?'—':Number(n).toLocaleString('en-IN',{maximumFractionDigits:0});
-const pct=n=>n==null||isNaN(n)?'—':`${Number(n).toFixed(2)}%`;
-const acId=id=>id.startsWith('act_')?id:`act_${id.trim()}`;
-const fd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
-const PRESETS=[
-  ['today','Today'],['yesterday','Yesterday'],['last2','Last 2 Days'],['last3','Last 3 Days'],['last4','Last 4 Days'],
-  ['last_7d','Last 7 Days'],['last_14d','Last 14 Days'],['last_30d','Last 30 Days'],['this_month','This Month']
-];
-
-const OBJ_MAP={
-  'OUTCOME_SALES':'Sales','OUTCOME_TRAFFIC':'Traffic','OUTCOME_AWARENESS':'Awareness',
-  'OUTCOME_ENGAGEMENT':'Engagement','OUTCOME_LEADS':'Leads','OUTCOME_APP_PROMOTION':'App Promo',
-  'CONVERSIONS':'Sales','LINK_CLICKS':'Traffic','REACH':'Awareness','BRAND_AWARENESS':'Awareness',
-  'VIDEO_VIEWS':'Video Views','LEAD_GENERATION':'Leads','MESSAGES':'Messages','CATALOG_SALES':'Catalog Sales'
-};
-
-// ── CALENDAR INIT ──
-function initPresetList(n){
-  const el=$(`plist${n}`);
-  el.innerHTML=PRESETS.map(([v,l])=>`<div class="pi${DC[n].label===l?' sel':''}" onclick="setPreset(${n},'${v}','${l}')">${l}</div>`).join('');
-}
-function drawCal(n){
-  const c=CAL[n];
-  $(`calMth${n}`).textContent=`${MONTHS[c.m]} ${c.y}`;
-  const first=new Date(c.y,c.m,1).getDay(),days=new Date(c.y,c.m+1,0).getDate();
-  const now=new Date();now.setHours(0,0,0,0);
-  let h=['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
-  for(let i=0;i<first;i++)h+=`<div class="cd emp"></div>`;
-  for(let d=1;d<=days;d++){
-    const date=new Date(c.y,c.m,d),fut=date>now,tod=date.getTime()===now.getTime(),ds=fd(date);
-    let cls='cd';
-    if(fut)cls+=' fut';
-    else if(ds===c.s||ds===c.e)cls+=' sel';
-    else if(c.s&&c.e&&ds>c.s&&ds<c.e)cls+=' inr';
-    else if(tod)cls+=' tod';
-    h+=`<div class="${cls}"${fut?'':` onclick="dayClick(${n},'${ds}')"`}>${d}</div>`;
-  }
-  $(`calGrid${n}`).innerHTML=h;
-  $(`calHint${n}`).textContent=!c.s?'Click a date or range start':!c.e?`Start: ${c.s} — click end date`:`${c.s}  →  ${c.e}`;
-  $(`calApply${n}`).style.display=c.s?'block':'none';
-}
-function mth(n,dir){const c=CAL[n];c.m+=dir;if(c.m>11){c.m=0;c.y++;}else if(c.m<0){c.m=11;c.y--;}drawCal(n);}
-function dayClick(n,ds){const c=CAL[n];if(!c.s||c.e){c.s=ds;c.e=null;}else{if(ds<c.s){c.e=c.s;c.s=ds;}else c.e=ds;}drawCal(n);}
-function applyCustom(n){
-  const c=CAL[n],s=c.s,e=c.e||c.s;
-  const lbl=s===e?s:`${s} → ${e}`;
-  DC[n]={type:'custom',since:s,until:e,label:lbl};
-  $(`dLabel${n}`).textContent=lbl;
-  document.querySelectorAll(`#plist${n} .pi`).forEach(el=>el.classList.remove('sel'));
-  $(`dDrop${n}`).classList.remove('open');
-  loadData();
-}
-function toggleCal(n){
-  const drop=$(`dDrop${n}`);
-  const open=drop.classList.contains('open');
-  document.querySelectorAll('.ddrop').forEach(d=>d.classList.remove('open'));
-  if(!open){initPresetList(n);drawCal(n);drop.classList.add('open');}
-}
-document.addEventListener('click',e=>{
-  if(!$('dWrap1').contains(e.target)&&!($('dWrap2')&&$('dWrap2').contains(e.target)))
-    document.querySelectorAll('.ddrop').forEach(d=>d.classList.remove('open'));
-});
-
-function setPreset(n,preset,label){
-  DC[n]={type:'preset',preset,label};
-  $(`dLabel${n}`).textContent=label;
-  document.querySelectorAll(`#plist${n} .pi`).forEach(el=>{el.classList.remove('sel');if(el.textContent===label)el.classList.add('sel');});
-  CAL[n].s=null;CAL[n].e=null;
-  $(`dDrop${n}`).classList.remove('open');
-  loadData();
-}
-
-function dparam(n){
-  const d=DC[n];
-  if(d.type==='preset'){
-    if(d.preset.startsWith('last')){
-      const days=parseInt(d.preset.replace('last',''));
-      if(!isNaN(days)){
-        const now=new Date();
-        const until=new Date(now);until.setDate(until.getDate()-1);
-        const since=new Date(now);since.setDate(since.getDate()-days);
-        return`time_range={"since":"${fd(since)}","until":"${fd(until)}"}`;
-      }
-    }
-    return`date_preset=${d.preset}`;
-  }
-  return`time_range={"since":"${d.since}","until":"${d.until}"}`;
-}
-
-function trendParam(){
-  const d=DC[1];
-  if(d.type==='preset'&&['today','yesterday'].includes(d.preset))return'date_preset=last_7d';
-  return dparam(1);
-}
-
-// ── COMPARE ──
-function toggleCompare(){
-  comparing=!comparing;
-  $('cmpBtn').classList.toggle('active-compare',comparing);
-  $('cmpRow').style.display=comparing?'flex':'none';
-  if(comparing)loadData();
-  else{lastCmpSum=null; lastCmpCamps=[]; renderOverview(lastSum, lastCmpSum, lastCamps, lastCmpCamps);}
-}
-
-// ── FETCH VIA VERCEL BACKEND ──
-async function apiFetch(url) {
-  const r = await fetch('/api/meta', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ targetUrl: url })
-  });
-  const j = await r.json();
-  if (j.error) throw new Error(j.error.message);
-  return j;
-}
-
-// ── ACTION PARSERS (STRICT DEDUPLICATION LOGIC) ──
-const ga=(actions,types)=>{
-  if(!actions)return 0;
-  const arr=Array.isArray(types)?types:[types];
-  for(const t of arr){
-    const f=actions.find(a=>a.action_type===t);
-    if(f)return Number(f.value||0);
-  }
-  return 0;
-};
-
-function parseR(row){
-  const a=row.actions||[];
-  const linkClicks=ga(a,['link_click','inline_link_clicks']);
-  const lpv=ga(a,['landing_page_view']);
-  const atc=ga(a,['add_to_cart','offsite_conversion.fb_pixel_add_to_cart']);
-  const chk=ga(a,['initiate_checkout','offsite_conversion.fb_pixel_initiate_checkout']);
-  const purch=ga(a,['purchase','offsite_conversion.fb_pixel_purchase']);
-  const pmt=ga(a,['add_payment_info','offsite_conversion.fb_pixel_add_payment_info']);
-  
-  // Custom Web Conversions (Queries/Leads tracking)
-  let customLeads = 0;
-  a.forEach(act => {
-     if(act.action_type && act.action_type.includes('offsite_conversion.custom')) {
-         customLeads += Number(act.value||0);
-     }
-  });
-  
-  const leads=ga(a,['lead','offsite_conversion.fb_pixel_lead','complete_registration']) + customLeads;
-  const spend=Number(row.spend||0);
-  
-  return{...row,spend,linkClicks,lpv,atc,chk,purch,pmt,leads};
-}
-
-// ── LOAD ──
-async function loadData(){
-  $('rfSp').style.display='inline-block';
-  const acc=acId(ACCOUNT), dp=dparam(1), tp=trendParam();
-  const fields='spend,impressions,clicks,ctr,cpm,cpc,reach,frequency,actions';
-
-  try{
-    const objRes=await apiFetch(`${BASE}/${acc}/campaigns?fields=id,name,objective&limit=200`);
-    let campObjMap={};
-    (objRes.data||[]).forEach(c=>{campObjMap[c.id]=OBJ_MAP[c.objective]||c.objective||'—';});
-
-    const[sRes,cRes,aRes,tRes]=await Promise.all([
-      apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${dp}`), 
-      apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,campaign_name,${fields}&${dp}&level=campaign&limit=100`), 
-      apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,ad_id,ad_name,${fields}&${dp}&level=ad&limit=500`), 
-      apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${tp}&time_increment=1`)
-    ]);
-
-    if(comparing){
-      const dp2=dparam(2);
-      const [cmpSRes, cmpCRes] = await Promise.all([
-        apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${dp2}`),
-        apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,campaign_name,${fields}&${dp2}&level=campaign&limit=100`)
-      ]);
-      lastCmpSum=parseR(cmpSRes.data?.[0]||{});
-      lastCmpCamps=(cmpCRes.data||[]).map(c=>parseR(c));
-    } else {
-      lastCmpSum = null;
-      lastCmpCamps = [];
-    }
-
-    lastSum=parseR(sRes.data?.[0]||{});
-    
-    // Process Campaigns and map strict math based on objective
-    lastCamps=(cRes.data||[]).map(c=>{
-        const pr = parseR(c);
-        const obj = campObjMap[c.campaign_id]||'—';
-        let res = 0; let cpr = null;
-        if(obj === 'Sales') { res = pr.purch; }
-        else if(obj === 'Leads') { res = pr.leads; }
-        else { res = pr.linkClicks; }
-        cpr = res > 0 ? pr.spend / res : null;
-        return {...pr, objLabel:obj, results:res, cpr:cpr};
-    });
-
-    // Process Ads and map strict math based on parent campaign objective
-    lastAdsByCamp = {};
-    (aRes.data||[]).forEach(ad => {
-        const adData = parseR(ad);
-        const adObj = campObjMap[ad.campaign_id] || '—';
-        let adRes = 0; let adCpr = null;
-        if(adObj === 'Sales') { adRes = adData.purch; }
-        else if(adObj === 'Leads') { adRes = adData.leads; }
-        else { adRes = adData.linkClicks; }
-        adCpr = adRes > 0 ? adData.spend / adRes : null;
-        
-        if(!lastAdsByCamp[ad.campaign_id]) lastAdsByCamp[ad.campaign_id] = [];
-        lastAdsByCamp[ad.campaign_id].push({ ad_name: ad.ad_name, ...adData, results: adRes, cpr: adCpr });
-    });
-
-    $('campPeriodLabel').textContent=DC[1].label;
-    
-    renderOverview(lastSum, lastCmpSum, lastCamps, lastCmpCamps);
-    renderCamps(lastCamps, lastAdsByCamp);
-    renderCharts(tRes.data||[]);
-    renderBench(lastSum);
-    $('lastFetched').textContent=`Updated: ${new Date().toLocaleString('en-IN')} · ${DC[1].label}`;
-  }catch(e){
-    $('lastFetched').textContent=`Error loading data: ${e.message}`;
-  }finally{$('rfSp').style.display='none';}
-}
-
-// ── OVERVIEW ENGINE ──
-function hintCls(v,good,warn,hib=false){
-  if(v==null||isNaN(v)||v===0)return null; // Prevents 0 from accidentally firing 'Good'
-  if(hib)return v>=good?{t:'✓ Good',c:'g'}:v>=warn?{t:'Average',c:'w'}:{t:'Low',c:'b'};
-  return v<=good?{t:'✓ Good',c:'g'}:v<=warn?{t:'Average',c:'w'}:{t:'High',c:'b'};
-}
-function deltaHtml(curr,prev,lowerBetter=false){
-  if(!prev||!curr||prev===0)return'';
-  const d=((curr-prev)/prev*100);
-  const up=d>0;
-  const good=(up&&!lowerBetter)||(!up&&lowerBetter);
-  const arrow=up?'↑':'↓';
-  const cls=good?'delta-up':'delta-dn';
-  return`<span class="${cls}">${arrow}${Math.abs(d).toFixed(1)}% vs prev</span>`;
-}
-
-function buildGridHtml(s, p, objLabel) {
-  let resLabel = 'Results';
-  let costLabel = 'Cost / Result';
-  let resValue = fI(s.results);
-  let costValue = s.cpr ? `₹${fN(s.cpr)}` : '—';
-  let cprRaw = s.cpr || 0;
-  
-  if (objLabel === 'Sales' || objLabel === 'Account') {
-    resLabel = 'Purchases'; costLabel = 'Cost / Purchase'; resValue = fI(s.purch);
-    cprRaw = s.purch > 0 ? (s.spend / s.purch) : 0;
-    costValue = cprRaw > 0 ? `₹${fN(cprRaw)}` : '—';
-  } else if (objLabel === 'Leads') {
-    resLabel = 'Queries / Leads'; costLabel = 'Cost / Query'; resValue = fI(s.leads);
-    cprRaw = s.leads > 0 ? (s.spend / s.leads) : 0;
-    costValue = cprRaw > 0 ? `₹${fN(cprRaw)}` : '—';
-  }
-
-  const cards=[
-    {l:'Amount Spent',v:`₹${fN(s.spend)}`,h:null,acc:true,lb:false,pk:'spend'},
-    {l:'Impressions',v:fI(s.impressions),h:null,lb:false,pk:'impressions'},
-    {l:'Reach',v:fI(s.reach),h:null,lb:false,pk:'reach'},
-    {l:'Frequency',v:fN(s.frequency),h:hintCls(s.frequency,2.5,4),lb:true,pk:'frequency'},
-    {l:'Link Clicks',v:fI(s.linkClicks),h:null,lb:false,pk:'linkClicks'},
-    {l:'CTR (Link)',v:pct(s.ctr),h:hintCls(s.ctr,1.5,0.5,true),lb:false,pk:'ctr'},
-    {l:'CPC',v:`₹${fN(s.cpc)}`,h:hintCls(s.cpc,15,30),lb:true,pk:'cpc'},
-    {l:'CPM',v:`₹${fN(s.cpm)}`,h:hintCls(s.cpm,100,200),lb:true,pk:'cpm'},
-    {l:'LP Views',v:fI(s.lpv),h:null,lb:false,pk:'lpv'},
-    {l:'Add to Cart',v:fI(s.atc),h:null,lb:false,pk:'atc'},
-    {l:'Checkouts',v:fI(s.chk),h:null,lb:false,pk:'chk'},
-    {l:resLabel,v:resValue,h:null,lb:false,pk:'results'},
-    {l:costLabel,v:costValue,h:hintCls(cprRaw,500,1500),lb:true,pk:'cpr'},
-  ];
-  
-  return cards.map(c=>`
-    <div class="sc${c.acc?' acc':''}">
-      <div class="sc-lbl">${c.l}</div>
-      <div class="sc-val">${c.v}</div>
-      ${c.h?`<div class="sc-hint ${c.h.c}">${c.h.t}</div>`:''}
-      ${(p&&c.pk&&p[c.pk]!=null)?`<div class="sc-cmp">${deltaHtml(s[c.pk],p[c.pk],c.lb)}<span style="color:var(--muted);font-size:10px">${c.pk==='spend'||c.pk==='cpc'||c.pk==='cpm'||c.pk==='cpr'?'₹':''}${typeof p[c.pk]==='number'&&!isNaN(p[c.pk])?p[c.pk].toLocaleString('en-IN',{maximumFractionDigits:2}):''}</span></div>`:''}
-    </div>`).join('');
-}
-
-function renderOverview(accountSum, accountPrevSum, campaigns, prevCamps) {
-  $('sGridAccount').innerHTML = buildGridHtml(accountSum, accountPrevSum, 'Account');
-  let campHtml = '';
-  campaigns.forEach(c => {
-    const pCamp = prevCamps ? prevCamps.find(p => p.campaign_id === c.campaign_id) : null;
-    campHtml += `<h3 class="section-title" style="margin-top: 40px;">Campaign: ${c.campaign_name} <span class="obj-pill" style="margin-left: 10px;">${c.objLabel}</span></h3>`;
-    campHtml += `<div class="sgrid">${buildGridHtml(c, pCamp, c.objLabel)}</div>`;
-  });
-  $('campGridsContainer').innerHTML = campHtml;
-}
-
-// ── TOGGLE ADS LOGIC ──
-window.toggleAds = function(cId) {
-  const rows = document.querySelectorAll(`.ad-grp-${cId}`);
-  const btn = document.getElementById(`btn-${cId}`);
-  let isHidden = true;
-  rows.forEach(r => {
-    if(r.style.display === 'none') {
-      r.style.display = 'table-row';
-      isHidden = false;
-    } else {
-      r.style.display = 'none';
-    }
-  });
-  if(btn) btn.textContent = isHidden ? '+' : '-';
-}
-
-// ── CAMPAIGNS & ADS TABLE ──
-function ctrCls(v){return v>1.5?'cg':v>0.5?'cw':'cb';}
-function freqCls(v){return v>4?'cb':v>2.5?'cw':'';}
-function sum(arr,key){return arr.reduce((a,c)=>a+(parseFloat(c[key])||0),0);}
-function sumA(arr,key){return arr.reduce((a,c)=>a+(Number(c[key])||0),0);}
-
-function renderCamps(camps, ads){
-  if(!camps.length){
-    $('cTbl').innerHTML=`<tr><td colspan="17" class="ec">No campaign data for selected period</td></tr>`;
-    $('cFoot').innerHTML='';return;
-  }
-  
-  let h = '';
-  camps.forEach(c => {
-    const hasAds = ads[c.campaign_id] && ads[c.campaign_id].length > 0;
-    const tglBtn = hasAds ? `<span id="btn-${c.campaign_id}" class="tgl-btn" onclick="toggleAds('${c.campaign_id}')">+</span>` : '';
-
-    h += `<tr class="camp-row">
-      <td class="td-name" title="${c.campaign_name}">${tglBtn}${c.campaign_name}</td>
-      <td class="td-obj"><span class="obj-pill">${c.objLabel}</span></td>
-      <td class="td-spend">${fN(c.spend)}</td>
-      <td>${fI(c.impressions)}</td>
-      <td>${fI(c.reach)}</td>
-      <td class="${freqCls(c.frequency)}">${fN(c.frequency)}</td>
-      <td>${fI(c.linkClicks)}</td>
-      <td class="${ctrCls(c.ctr)}">${pct(c.ctr)}</td>
-      <td>${fN(c.cpc)}</td>
-      <td>${fN(c.cpm)}</td>
-      <td>${fI(c.lpv)}</td>
-      <td>${fI(c.atc)}</td>
-      <td>${fI(c.chk)}</td>
-      <td>${fI(c.pmt)}</td>
-      <td>${fI(c.purch)}</td>
-      <td>${fI(c.leads)}</td>
-      <td>${c.cpr?fN(c.cpr):'—'}</td>
-    </tr>`;
-
-    if(hasAds) {
-      ads[c.campaign_id].forEach(ad => {
-        h += `<tr class="ad-row ad-grp-${c.campaign_id}" style="display:none;">
-          <td class="ad-name"><div class="ad-icon"></div>${ad.ad_name}</td>
-          <td>—</td>
-          <td class="td-spend">${fN(ad.spend)}</td>
-          <td>${fI(ad.impressions)}</td>
-          <td>${fI(ad.reach)}</td>
-          <td class="${freqCls(ad.frequency)}">${fN(ad.frequency)}</td>
-          <td>${fI(ad.linkClicks)}</td>
-          <td class="${ctrCls(ad.ctr)}">${pct(ad.ctr)}</td>
-          <td>${fN(ad.cpc)}</td>
-          <td>${fN(ad.cpm)}</td>
-          <td>${fI(ad.lpv)}</td>
-          <td>${fI(ad.atc)}</td>
-          <td>${fI(ad.chk)}</td>
-          <td>${fI(ad.pmt)}</td>
-          <td>${fI(ad.purch)}</td>
-          <td>${fI(ad.leads)}</td>
-          <td>${ad.cpr?fN(ad.cpr):'—'}</td>
-        </tr>`;
-      });
-    }
-  });
-  
-  $('cTbl').innerHTML = h;
-
-  const totSpend=sum(camps,'spend');
-  const totImp=sumA(camps,'impressions');
-  const totReach=sumA(camps,'reach');
-  const totLC=sumA(camps,'linkClicks');
-  const totLPV=sumA(camps,'lpv');
-  const totATC=sumA(camps,'atc');
-  const totChk=sumA(camps,'chk');
-  const totPmt=sumA(camps,'pmt');
-  const totPurch=sumA(camps,'purch');
-  const totLeads=sumA(camps,'leads');
-  const totRes=sumA(camps,'results');
-  const avgCtr=totImp?totLC/totImp*100:0;
-  const avgCpc=totLC?totSpend/totLC:0;
-  const avgCpm=totImp?totSpend/totImp*1000:0;
-  const avgFreq=camps.length?sum(camps,'frequency')/camps.length:0;
-  const totCpr=totRes?totSpend/totRes:null;
-
-  $('cFoot').innerHTML=`<tr>
-    <td style="font-family:'DM Sans',sans-serif;font-weight:700;color:var(--orange)">TOTAL (${camps.length} campaigns)</td>
-    <td>—</td>
-    <td class="td-spend">${fN(totSpend)}</td>
-    <td>${fI(totImp)}</td>
-    <td>${fI(totReach)}</td>
-    <td>${fN(avgFreq)}</td>
-    <td>${fI(totLC)}</td>
-    <td>${pct(avgCtr)}</td>
-    <td>${fN(avgCpc)}</td>
-    <td>${fN(avgCpm)}</td>
-    <td>${fI(totLPV)}</td>
-    <td>${fI(totATC)}</td>
-    <td>${fI(totChk)}</td>
-    <td>${fI(totPmt)}</td>
-    <td>${fI(totPurch)}</td>
-    <td>${fI(totLeads)}</td>
-    <td>${totCpr?fN(totCpr):'—'}</td>
-  </tr>`;
-}
-
-// ── CHARTS ──
-const TT={backgroundColor:'#111827',titleColor:'#94a3b8',bodyColor:'#f1f5f9',borderColor:'rgba(255,255,255,0.1)',borderWidth:1};
-const SC={grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748b',font:{size:11}}};
-function mkChart(id,labels,data,color,type='bar',pre=''){
-  if(charts[id])charts[id].destroy();
-  const ctx=$(id)?.getContext('2d');if(!ctx)return;
-  charts[id]=new Chart(ctx,{type,data:{labels,datasets:[{data,backgroundColor:type==='bar'?color+'33':undefined,borderColor:color,borderWidth:2,borderRadius:type==='bar'?4:undefined,fill:type==='line',tension:.35,pointBackgroundColor:color,pointRadius:3}]},
-    options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`${pre}${Number(c.parsed.y).toFixed(2)}`}}},scales:{x:SC,y:SC}}});
-}
-function renderCharts(rows){
-  const labels=rows.map(r=>r.date_start?.slice(5)||'');
-  const pr=rows.map(r=>parseR(r));
-  mkChart('cSpend',labels,rows.map(r=>+(r.spend||0)),'#f97316','bar','₹');
-  mkChart('cCTR',labels,rows.map(r=>+(r.ctr||0)),'#38bdf8','line','');
-  mkChart('cClicks',labels,rows.map(r=>+(r.clicks||0)),'#a78bfa','bar','');
-  mkChart('cCPM',labels,rows.map(r=>+(r.cpm||0)),'#34d399','line','₹');
-  mkChart('cATC',labels,pr.map(r=>r.atc||0),'#f59e0b','bar','');
-  mkChart('cLeads',labels,pr.map(r=>r.leads||0),'#22c55e','bar','');
-}
-
-// ── BENCHMARK ──
-function bSt(v,good,warn,hib=false){
-  if(v==null||isNaN(v)||v===0)return{c:'si',d:'di',l:'No data'};
-  if(hib)return v>=good?{c:'sg',d:'dg',l:'Good'}:v>=warn?{c:'sw',d:'dw',l:'Average'}:{c:'sb',d:'db',l:'Low'};
-  return v<=good?{c:'sg',d:'dg',l:'Good'}:v<=warn?{c:'sw',d:'dw',l:'Average'}:{c:'sb',d:'db',l:'High'};
-}
-const INF={c:'si',d:'di',l:'Info'};
-function bRow(metric,display,bench,st){
-  return`<div class="brow">
-    <div class="bm">${metric}</div><div class="bd">${bench}</div>
-    <div class="bv" style="color:${st.c==='sg'?'var(--good)':st.c==='sb'?'var(--bad)':st.c==='sw'?'var(--warn)':'var(--text)'}">${display}</div>
-    <div class="bs ${st.c}"><div class="dot ${st.d}"></div>${st.l}</div>
-  </div>`;
-}
-function bSec(t){return`<div class="bench-sec">${t}</div>`;}
-function renderBench(s){
-  const c2p=s.atc&&s.purch?(s.purch/s.atc*100):null;
-  const cl2c=s.linkClicks&&s.atc?(s.atc/s.linkClicks*100):null;
-  const lpDrop=s.linkClicks&&s.lpv?((s.linkClicks-s.lpv)/s.linkClicks*100):null;
-  let h='';
-  h+=bSec('TRAFFIC & DELIVERY');
-  h+=bRow('CTR — Link Click-Through',pct(s.ctr),'> 1.5% great · 0.5–1.5% ok · < 0.5% low',bSt(s.ctr,1.5,0.5,true));
-  h+=bRow('CPM — Cost per 1,000 Impressions',`₹${fN(s.cpm)}`,'< ₹100 good · ₹100–200 avg · > ₹200 high',bSt(s.cpm,100,200));
-  h+=bRow('CPC — Cost per Click',`₹${fN(s.cpc)}`,'< ₹15 good · ₹15–30 avg · > ₹30 high',bSt(s.cpc,15,30));
-  h+=bRow('Frequency',fN(s.frequency),'< 2.5 good · 2.5–4 monitor · > 4 fatigue risk',bSt(s.frequency,2.5,4));
-  h+=bRow('Reach',fI(s.reach),'Unique accounts reached',INF);
-  h+=bSec('FUNNEL');
-  h+=bRow('Link Clicks',fI(s.linkClicks),'Clicks to your website URL',INF);
-  h+=bRow('Landing Page Views',fI(s.lpv),'Should be close to link clicks',INF);
-  h+=bRow('LP Drop-off Rate',lpDrop!=null?pct(lpDrop):'—','< 20% ok · > 40% fix site speed',lpDrop!=null?bSt(lpDrop,20,40):INF);
-  h+=bRow('Add to Cart',fI(s.atc),'Funnel volume',INF);
-  h+=bRow('Checkouts Initiated',fI(s.chk),'Funnel volume',INF);
-  h+=bRow('Purchases',fI(s.purch),'Primary conversion',INF);
-  h+=bRow('Queries / Leads',fI(s.leads),'Custom & standard leads',INF);
-  h+=bRow('Click → Cart Rate',cl2c!=null?pct(cl2c):'—','> 3% good · 1–3% avg · < 1% low',bSt(cl2c,3,1,true));
-  h+=bRow('Cart → Purchase Rate',c2p!=null?pct(c2p):'—','> 10% good · 5–10% avg · < 5% low',bSt(c2p,10,5,true));
-  $('benchGrid').innerHTML=h;
-}
-
-// ── ADVANCED E-COM AI ENGINE (HIERARCHICAL AUDIT) ──
-function getAI(){
-  if(!lastSum){alert('Load data first');return;}
-  $('aiBt').disabled=true;$('aiBt').innerHTML='<span class="sp"></span>RUNNING FULL AUDIT...';
-  $('aiOut').style.display='none';
-  
-  setTimeout(() => {
-    let recs = [];
-    
-    // 1. ACCOUNT LEVEL
-    recs.push(`<div class="ai-h4">🌍 ACCOUNT OVERVIEW</div>`);
-    if(lastSum.spend === 0) {
-      recs.push(`<div class="ai-bullet">⚪ No spend detected across the account. Ensure campaigns are active.</div>`);
-    } else {
-      if(lastSum.cpm > 300) recs.push(`<div class="ai-bullet">🔴 <strong>Expensive Market:</strong> Account CPM is very high (₹${fN(lastSum.cpm)}). Broaden audience targeting to lower base costs.</div>`);
-      else recs.push(`<div class="ai-bullet">🟢 <strong>Healthy Delivery:</strong> Account CPM is steady (₹${fN(lastSum.cpm)}).</div>`);
-    }
-
-    // 2. CAMPAIGN LEVEL
-    lastCamps.forEach(c => {
-      if(c.spend > 0) {
-        recs.push(`<div class="ai-h4">📦 CAMPAIGN: ${c.campaign_name.toUpperCase()}</div>`);
-        
-        // E-Com Funnel Checks
-        if (c.objLabel === 'Sales') {
-            const clickToCart = c.linkClicks ? (c.atc / c.linkClicks) : 0;
-            const cartToPurch = c.atc ? (c.purch / c.atc) : 0;
-            
-            if(clickToCart > 0 && clickToCart < 0.03) recs.push(`<div class="ai-bullet indent">🟡 <strong>Low Intent Traffic:</strong> Only ${Math.round(clickToCart*100)}% of clicks added to cart. Ensure the ad creative strictly matches the landing page product.</div>`);
-            
-            if(c.atc > 0 && cartToPurch < 0.15) recs.push(`<div class="ai-bullet indent">🔴 <strong>Checkout Friction:</strong> You lost ${Math.round((1-cartToPurch)*100)}% of users after they added to cart. Audit shipping fees and payment gateway errors.</div>`);
-            else if(c.purch > 0 && cartToPurch >= 0.15) recs.push(`<div class="ai-bullet indent">🟢 <strong>Strong Checkout Flow:</strong> ${Math.round(cartToPurch*100)}% cart-to-purchase completion. Great conversion efficiency.</div>`);
-        } else if (c.objLabel === 'Leads') {
-            if (c.leads === 0 && c.linkClicks > 15) recs.push(`<div class="ai-bullet indent">🔴 <strong>Form Drop-off:</strong> ${c.linkClicks} clicks but 0 queries/leads. Check if the form is broken or asking for too many fields.</div>`);
-        }
-
-        // 3. AD LEVEL
-        if(lastAdsByCamp[c.campaign_id]) {
-          let flaggedAds = 0;
-          lastAdsByCamp[c.campaign_id].forEach(ad => {
-            if(ad.spend > 0) {
-               if(ad.frequency > 3.0) {
-                 recs.push(`<div class="ai-bullet indent" style="color:var(--warn)"><strong>Ad Warning:</strong> "${ad.ad_name}" is suffering from fatigue (Freq: ${fN(ad.frequency)}). Pause or replace creative.</div>`);
-                 flaggedAds++;
-               }
-               if(ad.ctr < 0.8 && ad.impressions > 500) {
-                 recs.push(`<div class="ai-bullet indent" style="color:var(--bad)"><strong>Poor Hook:</strong> "${ad.ad_name}" has a low CTR (${pct(ad.ctr)}). The visual is not stopping the scroll.</div>`);
-                 flaggedAds++;
-               }
+            for (const [key, value] of Object.entries(d)) {
+                const el = document.getElementById(key);
+                if (el) {
+                    if (key.includes('width')) el.style.width = value;
+                    else el.innerHTML = value;
+                }
+                
+                if(key === 'freq_val') document.getElementById('freq_val_sub').innerHTML = value;
+                if(key === 'impressions_val') { document.getElementById('impressions_val_f').innerHTML = value; document.getElementById('impressions_val_t').innerHTML = value; }
+                if(key === 'clicks_val') document.getElementById('clicks_val_t').innerHTML = value;
+                if(key === 'ctr_val') document.getElementById('ctr_val_t').innerHTML = value;
+                if(key === 'cpc_val') document.getElementById('cpc_val_t').innerHTML = value;
+                if(key === 'lpv_val') document.getElementById('lpv_val_t').innerHTML = value;
+                if(key === 'lpv_rate_val') document.getElementById('lpv_rate_val_f').innerHTML = value;
+                if(key === 'atc_val') document.getElementById('atc_val_t').innerHTML = value;
+                if(key === 'atc_rate_val') document.getElementById('atc_rate_val_f').innerHTML = value;
+                if(key === 'chk_val') document.getElementById('chk_val_t').innerHTML = value;
+                if(key === 'chk_rate_val') document.getElementById('chk_rate_val_f').innerHTML = value;
+                if(key === 'pay_val') document.getElementById('pay_val_t').innerHTML = value;
+                if(key === 'pur_val') { document.getElementById('pur_val_top').innerHTML = value; document.getElementById('pur_val_t').innerHTML = value; }
+                if(key === 'pur_rate_val') document.getElementById('pur_rate_val_f').innerHTML = value;
+                if(key === 'reach_val') document.getElementById('reach_val_t').innerHTML = value;
             }
-          });
-          if(flaggedAds === 0) recs.push(`<div class="ai-bullet indent">🟢 All active ads in this campaign are within healthy engagement and frequency benchmarks.</div>`);
         }
-      }
-    });
 
-    $('aiTxt').innerHTML = recs.join('');
-    $('aiOut').style.display='block';
-    $('aiBt').disabled=false;$('aiBt').textContent='RE-RUN AUDIT →';
-  }, 800);
-}
-
-// ── TABS ──
-function sw(name,el){
-  ['overview','campaigns','trends','benchmark','ai'].forEach(t=>{$(`t-${t}`).style.display=t===name?'block':'none';});
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-}
-
-window.onload=()=>{ loadData(); };
-</script>
+        updateView('yesterday');
+    </script>
 </body>
 </html>
