@@ -7,24 +7,26 @@ export default async function handler(req, res) {
     const { targetUrl } = req.body;
     const realToken = process.env.META_ACCESS_TOKEN;
     
-    // Diagnostic Check 1: Did Vercel load the token?
+    // Check if token exists in Vercel
     if (!realToken) {
       return res.status(200).json({ 
-        error: { message: "VERCEL ERROR: Your META_ACCESS_TOKEN is missing or empty in Vercel's Environment Variables." } 
+        error: { message: "VERCEL ERROR: META_ACCESS_TOKEN is missing in Vercel settings." } 
       });
     }
 
-    // Diagnostic Check 2: Did the frontend send the URL?
-    if (!targetUrl) {
-      return res.status(200).json({ 
-        error: { message: "VERCEL ERROR: No targetUrl was received from the frontend." } 
-      });
-    }
+    // Bulletproof way to inject the token into the Meta URL
+    const urlObj = new URL(targetUrl);
+    urlObj.searchParams.set('access_token', realToken.trim());
+    const finalUrl = urlObj.toString();
     
-    const finalUrl = targetUrl.replace('hidden_in_backend', realToken);
-    
+    // Fetch from Meta
     const metaResponse = await fetch(finalUrl);
     const data = await metaResponse.json();
+    
+    // If Meta still throws an error, add a debug tag so we can see if the token is corrupted
+    if (data.error) {
+      data.error.message = `META REJECTED TOKEN: ${data.error.message} (Token sent started with: ${realToken.substring(0, 6)}...)`;
+    }
     
     return res.status(200).json(data);
   } catch (error) {
