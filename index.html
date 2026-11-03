@@ -85,9 +85,16 @@ table{width:100%;border-collapse:collapse;font-size:12px;min-width:1100px}
 thead tr{border-bottom:1px solid var(--border)}
 th{padding:10px 13px;text-align:left;color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;font-weight:600}
 td{padding:10px 13px;border-bottom:1px solid rgba(255,255,255,0.03);white-space:nowrap;font-family:'Space Mono',monospace;font-size:12px}
+tbody tr.camp-row:hover td{background:rgba(255,255,255,0.02)}
 tbody tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:rgba(255,255,255,0.02)}
 tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:700;background:rgba(249,115,22,0.04)}
+
+/* Ad Row Styles */
+.ad-row td { background: rgba(0,0,0,0.3); color: var(--muted); font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.01); }
+.ad-row:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
+.ad-name { padding-left: 28px !important; font-family: 'DM Sans', sans-serif; max-width: 180px; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; }
+.ad-icon { width: 8px; height: 8px; border-left: 1px solid var(--muted); border-bottom: 1px solid var(--muted); margin-right: 8px; margin-bottom: 4px; display: inline-block; opacity: 0.5; }
+
 .td-name{font-family:'DM Sans',sans-serif;max-width:180px;overflow:hidden;text-overflow:ellipsis;font-weight:500}
 .td-obj{font-family:'DM Sans',sans-serif;font-size:11px}
 .obj-pill{display:inline-block;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:20px;padding:2px 9px;color:#818cf8;font-size:10px;white-space:nowrap}
@@ -129,8 +136,10 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
 .ai-intro{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:18px}
 .ai-intro p{font-size:14px;color:var(--muted);margin-bottom:14px}
 #aiOut{display:none;background:var(--od);border:1px solid var(--ob);border-radius:10px;padding:24px}
-#aiLbl{font-size:10px;color:var(--orange);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
-#aiTxt{font-size:14px;color:#cbd5e1;line-height:1.85;white-space:pre-wrap}
+#aiLbl{font-size:10px;color:var(--orange);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px}
+#aiTxt{font-size:14px;color:#cbd5e1;line-height:1.7;}
+.ai-bullet { margin-bottom: 12px; padding-left: 20px; position: relative; }
+.ai-bullet::before { content: "•"; color: var(--orange); font-weight: bold; position: absolute; left: 0; }
 
 /* ── SPINNER ── */
 .sp{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.12);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite;margin-right:5px;vertical-align:middle}
@@ -205,7 +214,7 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
   <!-- TABS -->
   <div class="tabs">
     <div class="tab active" onclick="sw('overview',this)">Overview</div>
-    <div class="tab" onclick="sw('campaigns',this)">Campaigns</div>
+    <div class="tab" onclick="sw('campaigns',this)">Campaigns & Ads</div>
     <div class="tab" onclick="sw('trends',this)">Trends</div>
     <div class="tab" onclick="sw('benchmark',this)">📊 Benchmark</div>
     <div class="tab" onclick="sw('ai',this)">🤖 AI Recs</div>
@@ -217,13 +226,13 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
   <div id="t-campaigns" style="display:none">
     <div class="twrap">
       <div class="thead-bar">
-        <span class="thead-title">Campaigns</span>
+        <span class="thead-title">Campaigns & Ads Breakdown</span>
         <span class="active-pill" id="campPeriodLabel">Selected Period</span>
       </div>
       <div class="tscroll">
         <table>
           <thead><tr>
-            <th>Campaign</th><th>Objective</th>
+            <th>Campaign / Ad</th><th>Objective</th>
             <th>Spent ₹</th><th>Impressions</th><th>Reach</th><th>Frequency</th>
             <th>Link Clicks</th><th>CTR%</th><th>CPC ₹</th><th>CPM ₹</th>
             <th>LP Views</th><th>Add to Cart</th><th>Checkouts</th>
@@ -251,10 +260,13 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
 
   <div id="t-ai" style="display:none">
     <div class="ai-intro">
-      <p id="aiIntroTxt">AI analyzes current period's full-funnel data and gives 5 specific actions for today. Requires an Anthropic API key (entered once per browser session — not stored in this file or in the repo).</p>
-      <button class="btn-o" id="aiBt" onclick="getAI()">GENERATE RECOMMENDATIONS →</button>
+      <p>This Local AI Diagnostic engine calculates custom insights based on funnel drop-offs, spend efficiency, and traffic quality in real-time. No API keys required.</p>
+      <button class="btn-o" id="aiBt" onclick="getAI()">RUN DIAGNOSTIC →</button>
     </div>
-    <div id="aiOut"><div id="aiLbl">AI Analysis</div><div id="aiTxt"></div></div>
+    <div id="aiOut">
+      <div id="aiLbl">Action Plan</div>
+      <div id="aiTxt"></div>
+    </div>
   </div>
 
   <div id="t-guide" style="display:none">
@@ -283,11 +295,11 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
     <div class="gcard"><div class="gcard-title">Cost per Result / Cost per Purchase</div><div class="gcard-body">How much you spent on average to get one purchase. If you spent ₹5,000 and got 10 purchases, Cost per Purchase = ₹500. <strong>Lower = more efficient ads.</strong><div class="gbench"><span>Good: below ₹500 · Average: ₹500–1,500 · High: above ₹1,500</span></div></div></div>
 
     <div class="guide-sec">📊 CAMPAIGN OBJECTIVE</div>
-    <div class="gcard"><div class="gcard-title">What does "Sales - Purchase" or "Sales - Add to Cart" mean?</div><div class="gcard-body">
+    <div class="gcard"><div class="gcard-title">What does "Sales" or "Leads" mean?</div><div class="gcard-body">
       This tells you <strong>what Meta is optimizing for</strong> — what action it's trying to get people to take.<br><br>
-      <strong>Sales - Purchase:</strong> Meta shows your ad to people most likely to buy. Best for direct revenue.<br>
-      <strong>Sales - Add to Cart:</strong> Meta shows your ad to people most likely to add to cart. Good for building pipeline but may not all convert to purchase.<br>
+      <strong>Sales:</strong> Meta shows your ad to people most likely to buy. Best for direct revenue.<br>
       <strong>Traffic:</strong> Meta shows your ad to people most likely to click and visit your site. Builds top-of-funnel.<br>
+      <strong>Leads:</strong> Meta optimizes for people who are likely to submit their contact info.<br>
       <strong>Awareness:</strong> Max reach and visibility. People see your brand, not necessarily click.
     </div></div>
 
@@ -314,17 +326,14 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
 const BASE='https://graph.facebook.com/v20.0';
 
 /* ───────────────────────────────────────────────────────────
-   TOKEN SECURELY MOVED TO BACKEND
+   HARDCODED CREDENTIALS
    ─────────────────────────────────────────────────────────── */
-const TOKEN='hidden_in_backend';
+const TOKEN='EAAVWz6sLgKgBRPxIqg0XZAif6o61pwOwIuVJo3EIa7Guz8kc5uDGyRTjABhm4TnrM70jISbpxJCKpZCMdy6ba6JTssYk2qSFTODzetl3UfR6gTsxImMO6nBiCZAePFnqXsnqcBxi2AKiRZCsVYrLfHdXxAmCkuxZCmDg8KTHL4AEddNweVYqYr2IgeWaC0UoCdLG3Nis0KQSWnlVLFrv7';
 const ACCOUNT='2495711530616735';
 
-// Anthropic key is NOT hardcoded — entered per-browser-session via prompt() the first
-// time someone clicks "Generate Recommendations", kept only in memory for that tab.
-let AI_KEY='';
 let charts={};
 let comparing=false;
-let lastSum=null,lastCmpSum=null,lastCamps=[];
+let lastSum=null,lastCmpSum=null,lastCamps=[],lastAdsByCamp={};
 let campObjMap={};// campaign_id → objective label
 
 // Two date configs: [1]=primary, [2]=compare
@@ -350,12 +359,12 @@ const PRESETS=[
   ['last_7d','Last 7 Days'],['last_14d','Last 14 Days'],['last_30d','Last 30 Days'],['this_month','This Month']
 ];
 
-// Objective mapping
+// Fixed Objective mapping - No guessing logic
 const OBJ_MAP={
   'OUTCOME_SALES':'Sales','OUTCOME_TRAFFIC':'Traffic','OUTCOME_AWARENESS':'Awareness',
   'OUTCOME_ENGAGEMENT':'Engagement','OUTCOME_LEADS':'Leads','OUTCOME_APP_PROMOTION':'App Promo',
-  'CONVERSIONS':'Conversions','LINK_CLICKS':'Traffic','REACH':'Awareness',
-  'BRAND_AWARENESS':'Awareness','VIDEO_VIEWS':'Video Views','LEAD_GENERATION':'Lead Gen',
+  'CONVERSIONS':'Sales','LINK_CLICKS':'Traffic','REACH':'Awareness',
+  'BRAND_AWARENESS':'Awareness','VIDEO_VIEWS':'Video Views','LEAD_GENERATION':'Leads',
   'MESSAGES':'Messages','CATALOG_SALES':'Catalog Sales','STORE_VISITS':'Store Visits',
   'POST_ENGAGEMENT':'Engagement','PAGE_LIKES':'Awareness'
 };
@@ -448,17 +457,7 @@ function toggleCompare(){
   else{lastCmpSum=null;renderStats(lastSum);}
 }
 
-// ROUTE TO VERCEL BACKEND INSTEAD OF DIRECT TO META
-async function apiFetch(url) {
-  const r = await fetch('/api/meta', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ targetUrl: url })
-  });
-  const j = await r.json();
-  if (j.error) throw new Error(j.error.message);
-  return j;
-}
+async function apiFetch(url){const r=await fetch(url);const j=await r.json();if(j.error)throw new Error(j.error.message);return j;}
 
 // ── ACTION PARSERS ──
 const ga=(actions,types)=>{if(!actions)return 0;let t=0;for(const tp of(Array.isArray(types)?types:[types])){const f=actions.find(a=>a.action_type===tp);if(f)t+=Number(f.value||0);}return t;};
@@ -477,18 +476,6 @@ function parseR(row){
   return{...row,linkClicks,lpv,atc,chk,purch,pmt,results,cpr};
 }
 
-// Infer campaign sub-objective from data
-function inferObj(row,baseLabel){
-  if(!baseLabel||baseLabel==='—')return'—';
-  if(baseLabel==='Sales'||baseLabel==='Conversions'||baseLabel==='Catalog Sales'){
-    if(row.purch>0)return`${baseLabel} — Purchase`;
-    if(row.chk>0)return`${baseLabel} — Checkout`;
-    if(row.atc>0)return`${baseLabel} — Add to Cart`;
-    return baseLabel;
-  }
-  return baseLabel;
-}
-
 // ── LOAD ──
 async function loadData(init=false){
   $('rfSp').style.display='inline-block';
@@ -496,18 +483,19 @@ async function loadData(init=false){
   const fields='spend,impressions,clicks,ctr,cpm,cpc,reach,frequency,actions,cost_per_action_type';
 
   try{
-    // Fetch campaign objectives (for labeling)
+    // Fetch campaign objectives
     const objRes=await apiFetch(`${BASE}/${acc}/campaigns?fields=id,name,objective&limit=200&access_token=${t}`);
     campObjMap={};
     (objRes.data||[]).forEach(c=>{campObjMap[c.id]=OBJ_MAP[c.objective]||c.objective||'—';});
 
-    const[sRes,cRes,tRes]=await Promise.all([
+    const[sRes,cRes,aRes,tRes]=await Promise.all([
       apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${dp}&access_token=${t}`),
       apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,campaign_name,${fields}&${dp}&level=campaign&limit=100&access_token=${t}`),
+      apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,ad_id,ad_name,${fields}&${dp}&level=ad&limit=500&access_token=${t}`),
       apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${tp}&time_increment=1&access_token=${t}`)
     ]);
 
-    // Compare period (if active)
+    // Compare period
     if(comparing){
       const dp2=dparam(2);
       const cmpRes=await apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${dp2}&access_token=${t}`);
@@ -515,12 +503,21 @@ async function loadData(init=false){
     }
 
     lastSum=parseR(sRes.data?.[0]||{});
-    // Show all campaigns with data in selected period (naturally = campaigns that ran on those dates)
-    lastCamps=(cRes.data||[]).map(c=>({...parseR(c),objLabel:inferObj(parseR(c),campObjMap[c.campaign_id]||'—')}));
+    
+    // Process Campaigns with true objective
+    lastCamps=(cRes.data||[]).map(c=>({...parseR(c),objLabel:campObjMap[c.campaign_id]||'—'}));
+
+    // Group Ads by Campaign ID
+    lastAdsByCamp = {};
+    (aRes.data||[]).forEach(ad => {
+        const adData = parseR(ad);
+        if(!lastAdsByCamp[ad.campaign_id]) lastAdsByCamp[ad.campaign_id] = [];
+        lastAdsByCamp[ad.campaign_id].push({ ad_name: ad.ad_name, ...adData });
+    });
 
     $('campPeriodLabel').textContent=DC[1].label;
     renderStats(lastSum);
-    renderCamps(lastCamps);
+    renderCamps(lastCamps, lastAdsByCamp);
     renderCharts(tRes.data||[]);
     renderBench(lastSum);
     $('lastFetched').textContent=`Updated: ${new Date().toLocaleString('en-IN')} · ${DC[1].label}`;
@@ -571,21 +568,24 @@ function renderStats(s){
     </div>`).join('');
 }
 
-// ── CAMPAIGNS ──
+// ── CAMPAIGNS & ADS ──
 function ctrCls(v){return v>1.5?'cg':v>0.5?'cw':'cb';}
 function freqCls(v){return v>4?'cb':v>2.5?'cw':'';}
 function sum(arr,key){return arr.reduce((a,c)=>a+(parseFloat(c[key])||0),0);}
 function sumA(arr,key){return arr.reduce((a,c)=>a+(Number(c[key])||0),0);}
 
-function renderCamps(camps){
+function renderCamps(camps, ads){
   if(!camps.length){
     $('cTbl').innerHTML=`<tr><td colspan="17" class="ec">No campaign data for selected period</td></tr>`;
     $('cFoot').innerHTML='';return;
   }
-  $('cTbl').innerHTML=camps.map(c=>`
-    <tr>
+  
+  let h = '';
+  camps.forEach(c => {
+    // Campaign Row
+    h += `<tr class="camp-row">
       <td class="td-name" title="${c.campaign_name}">${c.campaign_name}</td>
-      <td class="td-obj"><span class="obj-pill">${c.objLabel||'—'}</span></td>
+      <td class="td-obj"><span class="obj-pill">${c.objLabel}</span></td>
       <td class="td-spend">${fN(c.spend)}</td>
       <td>${fI(c.impressions)}</td>
       <td>${fI(c.reach)}</td>
@@ -601,7 +601,35 @@ function renderCamps(camps){
       <td>${fI(c.purch)}</td>
       <td>${fI(c.results)}</td>
       <td>${c.cpr?fN(c.cpr):'—'}</td>
-    </tr>`).join('');
+    </tr>`;
+
+    // Nested Ad Rows
+    if(ads && ads[c.campaign_id]) {
+      ads[c.campaign_id].forEach(ad => {
+        h += `<tr class="ad-row">
+          <td class="ad-name"><div class="ad-icon"></div>${ad.ad_name}</td>
+          <td>—</td>
+          <td class="td-spend">${fN(ad.spend)}</td>
+          <td>${fI(ad.impressions)}</td>
+          <td>${fI(ad.reach)}</td>
+          <td class="${freqCls(ad.frequency)}">${fN(ad.frequency)}</td>
+          <td>${fI(ad.linkClicks)}</td>
+          <td class="${ctrCls(ad.ctr)}">${pct(ad.ctr)}</td>
+          <td>${fN(ad.cpc)}</td>
+          <td>${fN(ad.cpm)}</td>
+          <td>${fI(ad.lpv)}</td>
+          <td>${fI(ad.atc)}</td>
+          <td>${fI(ad.chk)}</td>
+          <td>${fI(ad.pmt)}</td>
+          <td>${fI(ad.purch)}</td>
+          <td>${fI(ad.results)}</td>
+          <td>${ad.cpr?fN(ad.cpr):'—'}</td>
+        </tr>`;
+      });
+    }
+  });
+  
+  $('cTbl').innerHTML = h;
 
   // Totals row
   const totSpend=sum(camps,'spend');
@@ -703,42 +731,41 @@ function renderBench(s){
   $('benchGrid').innerHTML=h;
 }
 
-// ── AI RECS ──
-async function getAI(){
+// ── LOCAL AI ENGINE (NO API KEY REQUIRED) ──
+function getAI(){
   if(!lastSum){alert('Load data first');return;}
-  if(!AI_KEY){
-    const k=window.prompt('Enter your Anthropic API key (sk-ant-...) to generate AI recommendations.\nThis is kept in memory only for this browser tab — it is never saved to the page or the repo.');
-    if(!k){return;}
-    AI_KEY=k.trim();
-  }
   $('aiBt').disabled=true;$('aiBt').innerHTML='<span class="sp"></span>ANALYZING...';
   $('aiOut').style.display='none';
-  const s=lastSum;
-  const cLines=lastCamps.map(c=>`• ${c.campaign_name} [${c.objLabel}]: ₹${fN(c.spend)} spend, CTR ${pct(c.ctr)}, CPC ₹${fN(c.cpc)}, ATC ${c.atc}, Purchases ${c.purch}`).join('\n');
-  const prompt=`Meta Ads — ${DC[1].label}
-Spend: ₹${fN(s.spend)} | Impressions: ${fI(s.impressions)} | Reach: ${fI(s.reach)} | Frequency: ${fN(s.frequency)}
-Link Clicks: ${fI(s.linkClicks)} | CTR: ${pct(s.ctr)} | CPC: ₹${fN(s.cpc)} | CPM: ₹${fN(s.cpm)}
-LP Views: ${fI(s.lpv)} | Add to Cart: ${fI(s.atc)} | Checkouts: ${fI(s.chk)} | Purchases: ${fI(s.purch)}
-Cost/Purchase: ${s.cpr?`₹${fN(s.cpr)}`:'—'} | Cart→Purchase: ${s.atc&&s.purch?pct(s.purch/s.atc*100):'—'} | Click→Cart: ${s.linkClicks&&s.atc?pct(s.atc/s.linkClicks*100):'—'}
+  
+  setTimeout(() => {
+    const s = lastSum;
+    let recs = [];
+    
+    // Check 1: Traffic Quality (CTR)
+    if(s.ctr < 1.0) recs.push(`<div class="ai-bullet">🔴 <strong>Low Engagement:</strong> Overall CTR is ${pct(s.ctr)}. Your ad creatives are not stopping the scroll. Test new visual hooks or stronger opening copy today.</div>`);
+    else recs.push(`<div class="ai-bullet">🟢 <strong>Strong Engagement:</strong> CTR is healthy at ${pct(s.ctr)}. Your creatives are successfully capturing audience attention.</div>`);
+    
+    // Check 2: Delivery Cost (CPM)
+    if(s.cpm > 200) recs.push(`<div class="ai-bullet">🔴 <strong>Expensive Market:</strong> CPM is very high (₹${fN(s.cpm)}). Competition is fierce for this audience. Consider broadening your targeting.</div>`);
+    
+    // Check 3: Site Speed / Drop off
+    const lpDrop = s.linkClicks && s.lpv ? ((s.linkClicks - s.lpv)/s.linkClicks*100) : null;
+    if(lpDrop > 35) recs.push(`<div class="ai-bullet">🟡 <strong>Site Speed Warning:</strong> ${Math.round(lpDrop)}% of people clicked the ad but didn't wait for the landing page to load. Check mobile page speed immediately.</div>`);
+    
+    // Check 4: Intent vs Checkout
+    if(s.atc > 0 && s.purch === 0) recs.push(`<div class="ai-bullet">🔴 <strong>Cart Abandonment:</strong> You generated ${s.atc} Adds to Cart but 0 purchases. Check your checkout page for friction, shipping costs, or broken payment gateways.</div>`);
+    else if(s.purch > 0) recs.push(`<div class="ai-bullet">🟢 <strong>Funnel converting:</strong> You achieved ${s.purch} purchases at a CPA of ₹${fN(s.cpr)}. Ensure fulfillment is tracking nicely.</div>`);
+    
+    // Check 5: Frequency
+    if(s.frequency > 3.0) recs.push(`<div class="ai-bullet">🟡 <strong>Ad Fatigue:</strong> Frequency is high (${fN(s.frequency)}). Your audience is seeing the same ads too many times. Refresh creatives soon.</div>`);
+    
+    // Fallback if data is empty
+    if(s.spend === 0) recs = [`<div class="ai-bullet">⚪ No spend detected in this period. Ensure your campaigns are active and budget is set.</div>`];
 
-Active Campaigns:
-${cLines||'No campaign data'}`;
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':AI_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',max_tokens:1200,
-        system:'You are an expert Meta Ads performance marketer for One Good Object, an Indian e-commerce brand. Analyze full-funnel data. Give exactly 5 specific, prioritized, actionable recommendations. Reference actual numbers. Number each point. Be direct — no fluff.',
-        messages:[{role:'user',content:`Analyze and give 5 recommendations:\n\n${prompt}`}]
-      })
-    });
-    const j=await res.json();
-    if(j.error){AI_KEY='';throw new Error(j.error.message||JSON.stringify(j.error));}
-    $('aiTxt').textContent=j.content?.[0]?.text||'No response.';
+    $('aiTxt').innerHTML = recs.join('');
     $('aiOut').style.display='block';
-  }catch(e){$('aiTxt').textContent='Error: '+e.message;$('aiOut').style.display='block';}
-  $('aiBt').disabled=false;$('aiBt').textContent='REGENERATE →';
+    $('aiBt').disabled=false;$('aiBt').textContent='REGENERATE DIAGNOSTIC →';
+  }, 600);
 }
 
 // ── TABS ──
