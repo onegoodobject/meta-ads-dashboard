@@ -5,18 +5,31 @@ export default async function handler(req, res) {
   
   try {
     const { targetUrl } = req.body;
-    
-    // The frontend sends a URL with a fake token. 
-    // We swap it out for the REAL token stored securely in Vercel's vault.
     const realToken = process.env.META_ACCESS_TOKEN;
+    
+    // Diagnostic Check 1: Did Vercel load the token?
+    if (!realToken) {
+      return res.status(200).json({ 
+        error: { message: "VERCEL ERROR: Your META_ACCESS_TOKEN is missing or empty in Vercel's Environment Variables." } 
+      });
+    }
+
+    // Diagnostic Check 2: Did the frontend send the URL?
+    if (!targetUrl) {
+      return res.status(200).json({ 
+        error: { message: "VERCEL ERROR: No targetUrl was received from the frontend." } 
+      });
+    }
+    
     const finalUrl = targetUrl.replace('hidden_in_backend', realToken);
     
-    // Fetch from Meta and return to frontend
     const metaResponse = await fetch(finalUrl);
     const data = await metaResponse.json();
     
-    res.status(200).json(data);
+    return res.status(200).json(data);
   } catch (error) {
-    res.status(500).json({ error: { message: "Backend proxy error" } });
+    return res.status(200).json({ 
+      error: { message: "Backend proxy error: " + error.message } 
+    });
   }
 }
