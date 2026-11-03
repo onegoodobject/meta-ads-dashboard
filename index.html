@@ -95,7 +95,7 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
 .ad-name { padding-left: 28px !important; font-family: 'DM Sans', sans-serif; max-width: 180px; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; }
 .ad-icon { width: 8px; height: 8px; border-left: 1px solid var(--muted); border-bottom: 1px solid var(--muted); margin-right: 8px; margin-bottom: 4px; display: inline-block; opacity: 0.5; }
 
-.td-name{font-family:'DM Sans',sans-serif;max-width:180px;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.td-name{font-family:'DM Sans',sans-serif;max-width:180px;overflow:hidden;text-overflow:ellipsis;font-weight:500; font-size:13px;}
 .td-obj{font-family:'DM Sans',sans-serif;font-size:11px}
 .obj-pill{display:inline-block;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:20px;padding:2px 9px;color:#818cf8;font-size:10px;white-space:nowrap}
 .td-spend{color:var(--orange)}
@@ -120,17 +120,6 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
 .sw{color:var(--warn)}.dw{background:var(--warn)}
 .sb{color:var(--bad)}.db{background:var(--bad)}
 .si{color:var(--muted)}.di{background:var(--muted)}
-
-/* ── GUIDE ── */
-.guide-intro{background:var(--od);border:1px solid var(--ob);border-radius:10px;padding:20px 24px;margin-bottom:24px}
-.guide-intro p{font-size:14px;color:#cbd5e1;line-height:1.7}
-.guide-sec{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin:24px 0 10px 2px}
-.gcard{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-bottom:10px}
-.gcard-title{font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text)}
-.gcard-body{font-size:13px;color:#94a3b8;line-height:1.65}
-.gcard-body strong{color:var(--text)}
-.gcard-body .gbench{display:inline-block;margin-top:6px;font-size:12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:5px;padding:4px 10px;color:var(--muted)}
-.gcard-body .gbench span{color:var(--orange)}
 
 /* ── AI ── */
 .ai-intro{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:18px}
@@ -185,7 +174,7 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
         </div>
       </div>
     </div>
-    <!-- COMPARE DATE (hidden by default) -->
+    <!-- COMPARE DATE -->
     <div id="cmpRow" style="display:none;align-items:center;gap:8px">
       <span class="vs-lbl">vs</span>
       <div class="dw" id="dWrap2">
@@ -217,8 +206,7 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
     <div class="tab" onclick="sw('campaigns',this)">Campaigns & Ads</div>
     <div class="tab" onclick="sw('trends',this)">Trends</div>
     <div class="tab" onclick="sw('benchmark',this)">📊 Benchmark</div>
-    <div class="tab" onclick="sw('ai',this)">🤖 AI Recs</div>
-    <div class="tab" onclick="sw('guide',this)">📖 Guide</div>
+    <div class="tab" onclick="sw('ai',this)">🤖 AI Engine</div>
   </div>
 
   <div id="t-overview"><div class="sgrid" id="sGrid"></div></div>
@@ -232,7 +220,7 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
       <div class="tscroll">
         <table>
           <thead><tr>
-            <th>Campaign / Ad</th><th>Objective</th>
+            <th>Name</th><th>Objective</th>
             <th>Spent ₹</th><th>Impressions</th><th>Reach</th><th>Frequency</th>
             <th>Link Clicks</th><th>CTR%</th><th>CPC ₹</th><th>CPM ₹</th>
             <th>LP Views</th><th>Add to Cart</th><th>Checkouts</th>
@@ -260,7 +248,7 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
 
   <div id="t-ai" style="display:none">
     <div class="ai-intro">
-      <p>This Local AI Diagnostic engine calculates custom insights based on funnel drop-offs, spend efficiency, and traffic quality in real-time. No API keys required.</p>
+      <p>This Local AI Diagnostic engine calculates custom insights based on funnel drop-offs, spend efficiency, and traffic quality in real-time.</p>
       <button class="btn-o" id="aiBt" onclick="getAI()">RUN DIAGNOSTIC →</button>
     </div>
     <div id="aiOut">
@@ -268,73 +256,15 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
       <div id="aiTxt"></div>
     </div>
   </div>
-
-  <div id="t-guide" style="display:none">
-    <div class="guide-intro">
-      <p>📊 This dashboard shows how your Meta (Facebook/Instagram) ads are performing. Each number tells a story about where your money is going and whether it's working. This guide explains every metric in plain language — no technical knowledge needed.</p>
-    </div>
-    <div class="guide-sec">💰 SPEND & REACH</div>
-    <div class="gcard"><div class="gcard-title">Amount Spent</div><div class="gcard-body">How much money was used from your ad budget in the selected period. Higher doesn't always mean better — it matters how efficiently that money performed.<div class="gbench">No benchmark — depends on your budget</div></div></div>
-    <div class="gcard"><div class="gcard-title">Impressions</div><div class="gcard-body">Total number of times your ads were shown on screen. If one person saw your ad 5 times, that counts as 5 impressions. This is your <strong>total visibility</strong>.<div class="gbench">More impressions = more visibility. But watch frequency.</div></div></div>
-    <div class="gcard"><div class="gcard-title">Reach</div><div class="gcard-body">Number of <strong>unique people</strong> who saw your ad. Unlike impressions, seeing the same ad 5 times still counts as reach of 1. Shows how wide your audience spread is.<div class="gbench">Higher reach with lower frequency is ideal.</div></div></div>
-    <div class="gcard"><div class="gcard-title">Frequency</div><div class="gcard-body">Average number of times each person saw your ad. Frequency of 3 means each person saw it ~3 times. <strong>Too high = ad fatigue</strong> — people start ignoring or hiding your ad.<div class="gbench"><span>Good: below 2.5 · Watch: 2.5–4 · Danger zone: above 4</span></div></div></div>
-
-    <div class="guide-sec">👆 CLICKS & TRAFFIC</div>
-    <div class="gcard"><div class="gcard-title">Link Clicks</div><div class="gcard-body">Number of times people clicked the link in your ad to visit your website. This is the most important click metric — it shows real intent to visit your store.<div class="gbench">Higher = better. Compare with LP Views to check site speed.</div></div></div>
-    <div class="gcard"><div class="gcard-title">CTR — Click-Through Rate</div><div class="gcard-body">Out of everyone who saw your ad, what % actually clicked it. Formula: Link Clicks ÷ Impressions × 100. <strong>Higher CTR = more compelling ad creative.</strong><div class="gbench"><span>Good: above 1.5% · Average: 0.5–1.5% · Low: below 0.5%</span></div></div></div>
-    <div class="gcard"><div class="gcard-title">CPC — Cost per Click</div><div class="gcard-body">How much you paid on average for each link click. Lower is better. High CPC means your ad isn't engaging enough OR your audience is too competitive.<div class="gbench"><span>Good: below ₹15 · Average: ₹15–30 · High: above ₹30</span></div></div></div>
-    <div class="gcard"><div class="gcard-title">CPM — Cost per 1,000 Impressions</div><div class="gcard-body">How much it costs to show your ad 1,000 times. This reflects auction competition — if many advertisers target the same audience, CPM goes up. High CPM = expensive market.<div class="gbench"><span>Good: below ₹100 · Average: ₹100–200 · High: above ₹200</span></div></div></div>
-    <div class="gcard"><div class="gcard-title">Landing Page Views (LP Views)</div><div class="gcard-body">Number of times your website actually loaded after someone clicked. If Link Clicks = 100 but LP Views = 60, your site is slow — 40 people gave up waiting. <strong>Fix your site speed.</strong><div class="gbench">Should be close to Link Clicks. Drop-off above 20% needs attention.</div></div></div>
-
-    <div class="guide-sec">🛒 FUNNEL — FROM INTEREST TO PURCHASE</div>
-    <div class="gcard"><div class="gcard-title">Add to Cart</div><div class="gcard-body">Number of people who added a product to their cart on your website after clicking the ad. Shows <strong>strong purchase intent</strong> — they liked what they saw.<div class="gbench">Higher = better. Track ratio vs Purchases.</div></div></div>
-    <div class="gcard"><div class="gcard-title">Checkouts Initiated</div><div class="gcard-body">People who started the checkout process. They went beyond the cart to actually begin buying. Drop-off between ATC and Checkout usually means cart abandonment issues.<div class="gbench">Should be 30–60% of Add to Carts.</div></div></div>
-    <div class="gcard"><div class="gcard-title">Add Payment Info</div><div class="gcard-body">People who entered their payment details. Very high intent — they were ready to pay. If this is high but Purchases are low, your payment process may have a bug or friction point.<div class="gbench">Should be close to Checkouts Initiated.</div></div></div>
-    <div class="gcard"><div class="gcard-title">Purchases</div><div class="gcard-body">Final conversions — people who actually completed a purchase. This is the <strong>most important metric</strong> for an e-commerce brand. All other metrics support this one.<div class="gbench">Higher = better. Directly tied to revenue.</div></div></div>
-    <div class="gcard"><div class="gcard-title">Results</div><div class="gcard-body">The primary goal of each campaign, defined by its objective. For a Sales campaign, Results = Purchases. For a Traffic campaign, Results = Link Clicks. It's the headline metric per campaign objective.<div class="gbench">Depends on campaign objective.</div></div></div>
-    <div class="gcard"><div class="gcard-title">Cost per Result / Cost per Purchase</div><div class="gcard-body">How much you spent on average to get one purchase. If you spent ₹5,000 and got 10 purchases, Cost per Purchase = ₹500. <strong>Lower = more efficient ads.</strong><div class="gbench"><span>Good: below ₹500 · Average: ₹500–1,500 · High: above ₹1,500</span></div></div></div>
-
-    <div class="guide-sec">📊 CAMPAIGN OBJECTIVE</div>
-    <div class="gcard"><div class="gcard-title">What does "Sales" or "Leads" mean?</div><div class="gcard-body">
-      This tells you <strong>what Meta is optimizing for</strong> — what action it's trying to get people to take.<br><br>
-      <strong>Sales:</strong> Meta shows your ad to people most likely to buy. Best for direct revenue.<br>
-      <strong>Traffic:</strong> Meta shows your ad to people most likely to click and visit your site. Builds top-of-funnel.<br>
-      <strong>Leads:</strong> Meta optimizes for people who are likely to submit their contact info.<br>
-      <strong>Awareness:</strong> Max reach and visibility. People see your brand, not necessarily click.
-    </div></div>
-
-    <div class="guide-sec">📖 HOW TO USE THIS DASHBOARD</div>
-    <div class="gcard"><div class="gcard-title">Daily routine (5 minutes)</div><div class="gcard-body">
-      1. Open the dashboard → set to <strong>Yesterday</strong><br>
-      2. Check <strong>Overview</strong> — look at CTR, CPC, Purchases, Cost/Purchase<br>
-      3. Go to <strong>Benchmark</strong> tab — any red metrics need attention today<br>
-      4. Go to <strong>Campaigns</strong> tab — which campaign is spending the most? Is it performing?<br>
-      5. Click <strong>AI Recs</strong> → Generate Recommendations — get specific actions for today<br>
-      6. Use <strong>Compare</strong> button to compare yesterday vs the day before
-    </div></div>
-    <div class="gcard"><div class="gcard-title">When to worry</div><div class="gcard-body">
-      🔴 <strong>CTR below 0.5%</strong> — Ad creative is not grabbing attention. Test new images/videos.<br>
-      🔴 <strong>Frequency above 4</strong> — Same people seeing your ad too many times. Expand audience or refresh creative.<br>
-      🔴 <strong>LP Views much lower than Link Clicks</strong> — Website is too slow. People leaving before it loads.<br>
-      🔴 <strong>High Add to Cart but low Purchases</strong> — Checkout has friction. Check price, shipping cost, payment options.<br>
-      🔴 <strong>Cost per Purchase above ₹1,500</strong> — Ads not efficient. Could be wrong audience, weak creative, or bad landing page.
-    </div></div>
-  </div>
 </div>
 
 <script>
 const BASE='https://graph.facebook.com/v20.0';
-
-/* ───────────────────────────────────────────────────────────
-   HARDCODED CREDENTIALS
-   ─────────────────────────────────────────────────────────── */
-const TOKEN='EAAVWz6sLgKgBRPxIqg0XZAif6o61pwOwIuVJo3EIa7Guz8kc5uDGyRTjABhm4TnrM70jISbpxJCKpZCMdy6ba6JTssYk2qSFTODzetl3UfR6gTsxImMO6nBiCZAePFnqXsnqcBxi2AKiRZCsVYrLfHdXxAmCkuxZCmDg8KTHL4AEddNweVYqYr2IgeWaC0UoCdLG3Nis0KQSWnlVLFrv7';
 const ACCOUNT='2495711530616735';
 
 let charts={};
 let comparing=false;
 let lastSum=null,lastCmpSum=null,lastCamps=[],lastAdsByCamp={};
-let campObjMap={};// campaign_id → objective label
 
 // Two date configs: [1]=primary, [2]=compare
 const DC=[null,
@@ -359,14 +289,13 @@ const PRESETS=[
   ['last_7d','Last 7 Days'],['last_14d','Last 14 Days'],['last_30d','Last 30 Days'],['this_month','This Month']
 ];
 
-// Fixed Objective mapping - No guessing logic
+// Fixed Objective mapping - No more guessing based on funnel data
 const OBJ_MAP={
   'OUTCOME_SALES':'Sales','OUTCOME_TRAFFIC':'Traffic','OUTCOME_AWARENESS':'Awareness',
   'OUTCOME_ENGAGEMENT':'Engagement','OUTCOME_LEADS':'Leads','OUTCOME_APP_PROMOTION':'App Promo',
   'CONVERSIONS':'Sales','LINK_CLICKS':'Traffic','REACH':'Awareness',
   'BRAND_AWARENESS':'Awareness','VIDEO_VIEWS':'Video Views','LEAD_GENERATION':'Leads',
-  'MESSAGES':'Messages','CATALOG_SALES':'Catalog Sales','STORE_VISITS':'Store Visits',
-  'POST_ENGAGEMENT':'Engagement','PAGE_LIKES':'Awareness'
+  'MESSAGES':'Messages','CATALOG_SALES':'Catalog Sales'
 };
 
 // ── CALENDAR INIT ──
@@ -457,7 +386,17 @@ function toggleCompare(){
   else{lastCmpSum=null;renderStats(lastSum);}
 }
 
-async function apiFetch(url){const r=await fetch(url);const j=await r.json();if(j.error)throw new Error(j.error.message);return j;}
+// ── FETCH VIA VERCEL BACKEND ──
+async function apiFetch(url) {
+  const r = await fetch('/api/meta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ targetUrl: url })
+  });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error.message);
+  return j;
+}
 
 // ── ACTION PARSERS ──
 const ga=(actions,types)=>{if(!actions)return 0;let t=0;for(const tp of(Array.isArray(types)?types:[types])){const f=actions.find(a=>a.action_type===tp);if(f)t+=Number(f.value||0);}return t;};
@@ -477,34 +416,35 @@ function parseR(row){
 }
 
 // ── LOAD ──
-async function loadData(init=false){
+async function loadData(){
   $('rfSp').style.display='inline-block';
-  const acc=acId(ACCOUNT),t=TOKEN,dp=dparam(1),tp=trendParam();
+  const acc=acId(ACCOUNT), dp=dparam(1), tp=trendParam();
   const fields='spend,impressions,clicks,ctr,cpm,cpc,reach,frequency,actions,cost_per_action_type';
 
   try{
     // Fetch campaign objectives
-    const objRes=await apiFetch(`${BASE}/${acc}/campaigns?fields=id,name,objective&limit=200&access_token=${t}`);
-    campObjMap={};
+    const objRes=await apiFetch(`${BASE}/${acc}/campaigns?fields=id,name,objective&limit=200`);
+    let campObjMap={};
     (objRes.data||[]).forEach(c=>{campObjMap[c.id]=OBJ_MAP[c.objective]||c.objective||'—';});
 
+    // Fetch all levels
     const[sRes,cRes,aRes,tRes]=await Promise.all([
-      apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${dp}&access_token=${t}`),
-      apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,campaign_name,${fields}&${dp}&level=campaign&limit=100&access_token=${t}`),
-      apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,ad_id,ad_name,${fields}&${dp}&level=ad&limit=500&access_token=${t}`),
-      apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${tp}&time_increment=1&access_token=${t}`)
+      apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${dp}`), // Account Sum
+      apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,campaign_name,${fields}&${dp}&level=campaign&limit=100`), // Campaign
+      apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,ad_id,ad_name,${fields}&${dp}&level=ad&limit=500`), // Ad level
+      apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${tp}&time_increment=1`) // Trends
     ]);
 
-    // Compare period
+    // Compare period (if active)
     if(comparing){
       const dp2=dparam(2);
-      const cmpRes=await apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${dp2}&access_token=${t}`);
+      const cmpRes=await apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${dp2}`);
       lastCmpSum=parseR(cmpRes.data?.[0]||{});
     }
 
     lastSum=parseR(sRes.data?.[0]||{});
     
-    // Process Campaigns with true objective
+    // Process Campaigns and map true objective (No infer logic)
     lastCamps=(cRes.data||[]).map(c=>({...parseR(c),objLabel:campObjMap[c.campaign_id]||'—'}));
 
     // Group Ads by Campaign ID
@@ -604,7 +544,7 @@ function renderCamps(camps, ads){
     </tr>`;
 
     // Nested Ad Rows
-    if(ads && ads[c.campaign_id]) {
+    if(ads[c.campaign_id]) {
       ads[c.campaign_id].forEach(ad => {
         h += `<tr class="ad-row">
           <td class="ad-name"><div class="ad-icon"></div>${ad.ad_name}</td>
@@ -737,6 +677,7 @@ function getAI(){
   $('aiBt').disabled=true;$('aiBt').innerHTML='<span class="sp"></span>ANALYZING...';
   $('aiOut').style.display='none';
   
+  // Fake a small delay to feel like it's "calculating"
   setTimeout(() => {
     const s = lastSum;
     let recs = [];
@@ -770,7 +711,7 @@ function getAI(){
 
 // ── TABS ──
 function sw(name,el){
-  ['overview','campaigns','trends','benchmark','ai','guide'].forEach(t=>{$(`t-${t}`).style.display=t===name?'block':'none';});
+  ['overview','campaigns','trends','benchmark','ai'].forEach(t=>{$(`t-${t}`).style.display=t===name?'block':'none';});
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
 }
