@@ -273,16 +273,8 @@ let charts={};
 let comparing=false;
 let lastSum=null,lastCmpSum=null,lastCamps=[], lastCmpCamps=[], lastAdsByCamp={};
 
-// Two date configs: [1]=primary, [2]=compare
-const DC=[null,
-  {type:'preset',preset:'yesterday',label:'Yesterday'},
-  {type:'preset',preset:'last_7d',label:'Last 7 Days'}
-];
-const CAL=[null,
-  {y:new Date().getFullYear(),m:new Date().getMonth(),s:null,e:null},
-  {y:new Date().getFullYear(),m:new Date().getMonth(),s:null,e:null}
-];
-
+const DC=[null, {type:'preset',preset:'yesterday',label:'Yesterday'}, {type:'preset',preset:'last_7d',label:'Last 7 Days'}];
+const CAL=[null, {y:new Date().getFullYear(),m:new Date().getMonth(),s:null,e:null}, {y:new Date().getFullYear(),m:new Date().getMonth(),s:null,e:null}];
 const $=id=>document.getElementById(id);
 const fN=(n,p='')=>n==null||isNaN(n)||n===''?'—':`${p}${Number(n).toLocaleString('en-IN',{maximumFractionDigits:2})}`;
 const fI=n=>(!n||isNaN(n)||n===0)?'—':Number(n).toLocaleString('en-IN',{maximumFractionDigits:0});
@@ -291,18 +283,15 @@ const acId=id=>id.startsWith('act_')?id:`act_${id.trim()}`;
 const fd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const PRESETS=[
-  ['today','Today'],['yesterday','Yesterday'],
-  ['last2','Last 2 Days'],['last3','Last 3 Days'],['last4','Last 4 Days'],
+  ['today','Today'],['yesterday','Yesterday'],['last2','Last 2 Days'],['last3','Last 3 Days'],['last4','Last 4 Days'],
   ['last_7d','Last 7 Days'],['last_14d','Last 14 Days'],['last_30d','Last 30 Days'],['this_month','This Month']
 ];
 
-// Fixed Objective mapping
 const OBJ_MAP={
   'OUTCOME_SALES':'Sales','OUTCOME_TRAFFIC':'Traffic','OUTCOME_AWARENESS':'Awareness',
   'OUTCOME_ENGAGEMENT':'Engagement','OUTCOME_LEADS':'Leads','OUTCOME_APP_PROMOTION':'App Promo',
-  'CONVERSIONS':'Sales','LINK_CLICKS':'Traffic','REACH':'Awareness',
-  'BRAND_AWARENESS':'Awareness','VIDEO_VIEWS':'Video Views','LEAD_GENERATION':'Leads',
-  'MESSAGES':'Messages','CATALOG_SALES':'Catalog Sales'
+  'CONVERSIONS':'Sales','LINK_CLICKS':'Traffic','REACH':'Awareness','BRAND_AWARENESS':'Awareness',
+  'VIDEO_VIEWS':'Video Views','LEAD_GENERATION':'Leads','MESSAGES':'Messages','CATALOG_SALES':'Catalog Sales'
 };
 
 // ── CALENDAR INIT ──
@@ -405,32 +394,37 @@ async function apiFetch(url) {
   return j;
 }
 
-// ── ACTION PARSERS ──
-const ga=(actions,types)=>{if(!actions)return 0;let t=0;for(const tp of(Array.isArray(types)?types:[types])){const f=actions.find(a=>a.action_type===tp);if(f)t+=Number(f.value||0);}return t;};
-const gcpr=(cpa,types)=>{if(!cpa)return null;for(const tp of(Array.isArray(types)?types:[types])){const f=cpa.find(a=>a.action_type===tp);if(f)return Number(f.value||0);}return null;};
-function parseR(row){
-  const a=row.actions||[],cpa=row.cost_per_action_type||[];
-  const linkClicks=ga(a,'link_click');
-  const lpv=ga(a,'landing_page_view');
-  const atc=ga(a,['offsite_conversion.fb_pixel_add_to_cart','onsite_web_add_to_cart_facebook_pixel','add_to_cart']);
-  const chk=ga(a,['offsite_conversion.fb_pixel_initiate_checkout','onsite_web_initiate_checkout_facebook_pixel','initiate_checkout']);
-  const purch=ga(a,['offsite_conversion.fb_pixel_purchase','purchase','onsite_web_purchase_facebook_pixel']);
-  const pmt=ga(a,['offsite_conversion.fb_pixel_add_payment_info','add_payment_info']);
-  const leads=ga(a,['lead','complete_registration']);
-  const results=purch||leads||linkClicks||0;
-  
-  // Try to find exact CPR, otherwise default to spend / results
-  let cpr=gcpr(cpa,['offsite_conversion.fb_pixel_purchase','purchase','lead']);
-  if(cpr == null && results > 0 && row.spend) cpr = Number(row.spend) / results;
+// ── ACTION PARSERS (STRICT DEDUPLICATION LOGIC) ──
+// This function strictly grabs the first matched event type in the array and ignores the rest to prevent double-counting.
+const ga=(actions,types)=>{
+  if(!actions)return 0;
+  const arr=Array.isArray(types)?types:[types];
+  for(const t of arr){
+    const f=actions.find(a=>a.action_type===t);
+    if(f)return Number(f.value||0);
+  }
+  return 0;
+};
 
-  return{...row,linkClicks,lpv,atc,chk,purch,pmt,leads,results,cpr};
+function parseR(row){
+  const a=row.actions||[];
+  const linkClicks=ga(a,['link_click','inline_link_clicks']);
+  const lpv=ga(a,['landing_page_view']);
+  const atc=ga(a,['add_to_cart','offsite_conversion.fb_pixel_add_to_cart']);
+  const chk=ga(a,['initiate_checkout','offsite_conversion.fb_pixel_initiate_checkout']);
+  const purch=ga(a,['purchase','offsite_conversion.fb_pixel_purchase']);
+  const pmt=ga(a,['add_payment_info','offsite_conversion.fb_pixel_add_payment_info']);
+  const leads=ga(a,['lead','offsite_conversion.fb_pixel_lead','complete_registration']);
+  const spend=Number(row.spend||0);
+  
+  return{...row,spend,linkClicks,lpv,atc,chk,purch,pmt,leads};
 }
 
 // ── LOAD ──
 async function loadData(){
   $('rfSp').style.display='inline-block';
   const acc=acId(ACCOUNT), dp=dparam(1), tp=trendParam();
-  const fields='spend,impressions,clicks,ctr,cpm,cpc,reach,frequency,actions,cost_per_action_type';
+  const fields='spend,impressions,clicks,ctr,cpm,cpc,reach,frequency,actions';
 
   try{
     const objRes=await apiFetch(`${BASE}/${acc}/campaigns?fields=id,name,objective&limit=200`);
@@ -458,20 +452,37 @@ async function loadData(){
     }
 
     lastSum=parseR(sRes.data?.[0]||{});
-    lastCamps=(cRes.data||[]).map(c=>({...parseR(c),objLabel:campObjMap[c.campaign_id]||'—'}));
+    
+    // Process Campaigns and map strict math based on objective
+    lastCamps=(cRes.data||[]).map(c=>{
+        const pr = parseR(c);
+        const obj = campObjMap[c.campaign_id]||'—';
+        let res = 0; let cpr = null;
+        if(obj === 'Sales') { res = pr.purch; }
+        else if(obj === 'Leads') { res = pr.leads; }
+        else { res = pr.linkClicks; }
+        cpr = res > 0 ? pr.spend / res : null;
+        return {...pr, objLabel:obj, results:res, cpr:cpr};
+    });
 
+    // Process Ads and map strict math based on parent campaign objective
     lastAdsByCamp = {};
     (aRes.data||[]).forEach(ad => {
         const adData = parseR(ad);
+        const adObj = campObjMap[ad.campaign_id] || '—';
+        let adRes = 0; let adCpr = null;
+        if(adObj === 'Sales') { adRes = adData.purch; }
+        else if(adObj === 'Leads') { adRes = adData.leads; }
+        else { adRes = adData.linkClicks; }
+        adCpr = adRes > 0 ? adData.spend / adRes : null;
+        
         if(!lastAdsByCamp[ad.campaign_id]) lastAdsByCamp[ad.campaign_id] = [];
-        lastAdsByCamp[ad.campaign_id].push({ ad_name: ad.ad_name, ...adData });
+        lastAdsByCamp[ad.campaign_id].push({ ad_name: ad.ad_name, ...adData, results: adRes, cpr: adCpr });
     });
 
     $('campPeriodLabel').textContent=DC[1].label;
     
-    // Call our new Master Overview Renderer
     renderOverview(lastSum, lastCmpSum, lastCamps, lastCmpCamps);
-    
     renderCamps(lastCamps, lastAdsByCamp);
     renderCharts(tRes.data||[]);
     renderBench(lastSum);
@@ -498,15 +509,20 @@ function deltaHtml(curr,prev,lowerBetter=false){
 }
 
 function buildGridHtml(s, p, objLabel) {
-  // Determine dynamic labels based on campaign objective
   let resLabel = 'Results';
   let costLabel = 'Cost / Result';
   let resValue = fI(s.results);
+  let costValue = s.cpr ? `₹${fN(s.cpr)}` : '—';
+  let cprRaw = s.cpr || 0;
   
-  if (objLabel === 'Sales') {
+  if (objLabel === 'Sales' || objLabel === 'Account') {
     resLabel = 'Purchases'; costLabel = 'Cost / Purchase'; resValue = fI(s.purch);
+    cprRaw = s.purch > 0 ? (s.spend / s.purch) : 0;
+    costValue = cprRaw > 0 ? `₹${fN(cprRaw)}` : '—';
   } else if (objLabel === 'Leads') {
     resLabel = 'Leads'; costLabel = 'Cost / Lead'; resValue = fI(s.leads);
+    cprRaw = s.leads > 0 ? (s.spend / s.leads) : 0;
+    costValue = cprRaw > 0 ? `₹${fN(cprRaw)}` : '—';
   }
 
   const cards=[
@@ -522,7 +538,7 @@ function buildGridHtml(s, p, objLabel) {
     {l:'Add to Cart',v:fI(s.atc),h:null,lb:false,pk:'atc'},
     {l:'Checkouts',v:fI(s.chk),h:null,lb:false,pk:'chk'},
     {l:resLabel,v:resValue,h:null,lb:false,pk:'results'},
-    {l:costLabel,v:s.cpr?`₹${fN(s.cpr)}`:'—',h:hintCls(s.cpr,500,1500),lb:true,pk:'cpr'},
+    {l:costLabel,v:costValue,h:hintCls(cprRaw,500,1500),lb:true,pk:'cpr'},
   ];
   
   return cards.map(c=>`
@@ -535,10 +551,7 @@ function buildGridHtml(s, p, objLabel) {
 }
 
 function renderOverview(accountSum, accountPrevSum, campaigns, prevCamps) {
-  // 1. Render Top Level Account Grid
   $('sGridAccount').innerHTML = buildGridHtml(accountSum, accountPrevSum, 'Account');
-
-  // 2. Render Individual Campaign Grids
   let campHtml = '';
   campaigns.forEach(c => {
     const pCamp = prevCamps ? prevCamps.find(p => p.campaign_id === c.campaign_id) : null;
@@ -723,11 +736,11 @@ function renderBench(s){
   h+=bRow('Cart → Purchase Rate',c2p!=null?pct(c2p):'—','> 10% good · 5–10% avg · < 5% low',bSt(c2p,10,5,true));
   h+=bSec('EFFICIENCY');
   h+=bRow('Amount Spent',`₹${fN(s.spend)}`,'Check budget pacing',INF);
-  h+=bRow('Cost per Purchase',s.cpr?`₹${fN(s.cpr)}`:'—','< ₹500 good · ₹500–1,500 avg · > ₹1,500 high',bSt(s.cpr,500,1500));
+  h+=bRow('Cost per Purchase',s.purch?`₹${fN(s.spend/s.purch)}`:'—','< ₹500 good · ₹500–1,500 avg · > ₹1,500 high',bSt(s.purch?(s.spend/s.purch):0,500,1500));
   $('benchGrid').innerHTML=h;
 }
 
-// ── LOCAL AI ENGINE (NO API KEY REQUIRED) ──
+// ── LOCAL AI ENGINE ──
 function getAI(){
   if(!lastSum){alert('Load data first');return;}
   $('aiBt').disabled=true;$('aiBt').innerHTML='<span class="sp"></span>ANALYZING...';
@@ -737,19 +750,22 @@ function getAI(){
     const s = lastSum;
     let recs = [];
     
-    if(s.ctr < 1.0) recs.push(`<div class="ai-bullet">🔴 <strong>Low Engagement:</strong> Overall CTR is ${pct(s.ctr)}. Your ad creatives are not stopping the scroll. Test new visual hooks or stronger opening copy today.</div>`);
-    else recs.push(`<div class="ai-bullet">🟢 <strong>Strong Engagement:</strong> CTR is healthy at ${pct(s.ctr)}. Your creatives are successfully capturing audience attention.</div>`);
+    // Engagement
+    if(s.ctr < 1.0) recs.push(`<div class="ai-bullet">🔴 <strong>Low Engagement:</strong> Overall CTR is ${pct(s.ctr)}. Test new visual hooks or stronger opening copy to capture attention faster.</div>`);
+    else if(s.ctr > 1.5) recs.push(`<div class="ai-bullet">🟢 <strong>Strong Engagement:</strong> CTR is healthy at ${pct(s.ctr)}. Your ad creatives are successfully stopping the scroll.</div>`);
     
-    if(s.cpm > 200) recs.push(`<div class="ai-bullet">🔴 <strong>Expensive Market:</strong> CPM is very high (₹${fN(s.cpm)}). Competition is fierce for this audience. Consider broadening your targeting.</div>`);
+    // Funnel Ratios
+    const clickToCart = s.linkClicks ? (s.atc / s.linkClicks) : 0;
+    const cartToPurch = s.atc ? (s.purch / s.atc) : 0;
     
-    const lpDrop = s.linkClicks && s.lpv ? ((s.linkClicks - s.lpv)/s.linkClicks*100) : null;
-    if(lpDrop > 35) recs.push(`<div class="ai-bullet">🟡 <strong>Site Speed Warning:</strong> ${Math.round(lpDrop)}% of people clicked the ad but didn't wait for the landing page to load. Check mobile page speed immediately.</div>`);
+    if(clickToCart > 0 && clickToCart < 0.03) recs.push(`<div class="ai-bullet">🟡 <strong>Traffic Quality Warning:</strong> Only ${Math.round(clickToCart*100)}% of clicks added to cart. Check if the ad aligns with the landing page offer.</div>`);
     
-    if(s.atc > 0 && s.purch === 0) recs.push(`<div class="ai-bullet">🔴 <strong>Cart Abandonment:</strong> You generated ${s.atc} Adds to Cart but 0 purchases. Check your checkout page for friction, shipping costs, or broken payment gateways.</div>`);
-    else if(s.purch > 0) recs.push(`<div class="ai-bullet">🟢 <strong>Funnel converting:</strong> You achieved ${s.purch} purchases at a CPA of ₹${fN(s.cpr)}. Ensure fulfillment is tracking nicely.</div>`);
+    if(s.atc > 0 && cartToPurch < 0.15) recs.push(`<div class="ai-bullet">🔴 <strong>High Checkout Friction:</strong> Only ${Math.round(cartToPurch*100)}% of people who added to cart completed their purchase. Audit your shipping costs and checkout flow immediately.</div>`);
+    else if(s.purch > 0 && cartToPurch >= 0.15) recs.push(`<div class="ai-bullet">🟢 <strong>Solid Conversion Rate:</strong> ${Math.round(cartToPurch*100)}% cart-to-purchase completion. Your checkout process is working smoothly.</div>`);
     
+    // Efficiency
+    if(s.cpm > 300) recs.push(`<div class="ai-bullet">🔴 <strong>Expensive Delivery:</strong> CPM is very high (₹${fN(s.cpm)}). Competition is fierce for this audience. Consider broadening your targeting.</div>`);
     if(s.frequency > 3.0) recs.push(`<div class="ai-bullet">🟡 <strong>Ad Fatigue:</strong> Frequency is high (${fN(s.frequency)}). Your audience is seeing the same ads too many times. Refresh creatives soon.</div>`);
-    
     if(s.spend === 0) recs = [`<div class="ai-bullet">⚪ No spend detected in this period. Ensure your campaigns are active and budget is set.</div>`];
 
     $('aiTxt').innerHTML = recs.join('');
@@ -765,7 +781,6 @@ function sw(name,el){
   el.classList.add('active');
 }
 
-// ── AUTO LOAD ──
 window.onload=()=>{ loadData(); };
 </script>
 </body>
