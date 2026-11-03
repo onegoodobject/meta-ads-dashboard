@@ -90,12 +90,13 @@ tbody tr:last-child td{border-bottom:none}
 tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:700;background:rgba(249,115,22,0.04)}
 
 /* Ad Row Styles */
-.ad-row td { background: rgba(0,0,0,0.3); color: var(--muted); font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.01); }
-.ad-row:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
-.ad-name { padding-left: 28px !important; font-family: 'DM Sans', sans-serif; max-width: 180px; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; }
+.ad-row td { background: rgba(0,0,0,0.3); color: var(--muted); font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.01); transition: all 0.2s; }
+.ad-row:hover td { background: rgba(255,255,255,0.05); color: var(--text); }
+.ad-name { padding-left: 36px !important; font-family: 'DM Sans', sans-serif; max-width: 220px; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; }
 .ad-icon { width: 8px; height: 8px; border-left: 1px solid var(--muted); border-bottom: 1px solid var(--muted); margin-right: 8px; margin-bottom: 4px; display: inline-block; opacity: 0.5; }
+.tgl-btn { cursor:pointer; color:var(--orange); font-family:monospace; margin-right:8px; background:rgba(249,115,22,0.1); padding:2px 6px; border-radius:4px; display:inline-block; text-align:center; min-width: 22px;}
 
-.td-name{font-family:'DM Sans',sans-serif;max-width:180px;overflow:hidden;text-overflow:ellipsis;font-weight:500; font-size:13px;}
+.td-name{font-family:'DM Sans',sans-serif;max-width:220px;overflow:hidden;text-overflow:ellipsis;font-weight:500; font-size:13px; display: flex; align-items: center;}
 .td-obj{font-family:'DM Sans',sans-serif;font-size:11px}
 .obj-pill{display:inline-block;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:20px;padding:2px 9px;color:#818cf8;font-size:10px;white-space:nowrap}
 .td-spend{color:var(--orange)}
@@ -508,6 +509,22 @@ function renderStats(s){
     </div>`).join('');
 }
 
+// ── TOGGLE ADS LOGIC ──
+window.toggleAds = function(cId) {
+  const rows = document.querySelectorAll(`.ad-grp-${cId}`);
+  const btn = document.getElementById(`btn-${cId}`);
+  let isHidden = true;
+  rows.forEach(r => {
+    if(r.style.display === 'none') {
+      r.style.display = 'table-row';
+      isHidden = false;
+    } else {
+      r.style.display = 'none';
+    }
+  });
+  if(btn) btn.textContent = isHidden ? '+' : '-';
+}
+
 // ── CAMPAIGNS & ADS ──
 function ctrCls(v){return v>1.5?'cg':v>0.5?'cw':'cb';}
 function freqCls(v){return v>4?'cb':v>2.5?'cw':'';}
@@ -522,9 +539,12 @@ function renderCamps(camps, ads){
   
   let h = '';
   camps.forEach(c => {
-    // Campaign Row
+    // Campaign Row with Toggle Button if Ads exist
+    const hasAds = ads[c.campaign_id] && ads[c.campaign_id].length > 0;
+    const tglBtn = hasAds ? `<span id="btn-${c.campaign_id}" class="tgl-btn" onclick="toggleAds('${c.campaign_id}')">+</span>` : '';
+
     h += `<tr class="camp-row">
-      <td class="td-name" title="${c.campaign_name}">${c.campaign_name}</td>
+      <td class="td-name" title="${c.campaign_name}">${tglBtn}${c.campaign_name}</td>
       <td class="td-obj"><span class="obj-pill">${c.objLabel}</span></td>
       <td class="td-spend">${fN(c.spend)}</td>
       <td>${fI(c.impressions)}</td>
@@ -543,10 +563,10 @@ function renderCamps(camps, ads){
       <td>${c.cpr?fN(c.cpr):'—'}</td>
     </tr>`;
 
-    // Nested Ad Rows
-    if(ads[c.campaign_id]) {
+    // Nested Ad Rows (Hidden by Default)
+    if(hasAds) {
       ads[c.campaign_id].forEach(ad => {
-        h += `<tr class="ad-row">
+        h += `<tr class="ad-row ad-grp-${c.campaign_id}" style="display:none;">
           <td class="ad-name"><div class="ad-icon"></div>${ad.ad_name}</td>
           <td>—</td>
           <td class="td-spend">${fN(ad.spend)}</td>
@@ -639,7 +659,7 @@ const INF={c:'si',d:'di',l:'Info'};
 function bRow(metric,display,bench,st){
   return`<div class="brow">
     <div class="bm">${metric}</div><div class="bd">${bench}</div>
-    <div class="bv" style="color:${st.c==='sg'?'var(--good)':st.c==='sb'?'var(--bad)':st.c==='sw'?'var(--warn)':'var(--text)'}">${display}</div>
+    <div class="bv" style="color:${st.c==='sg'?'var(--good)':st.c==='sb'?'var(--warn)':'var(--text)'}">${display}</div>
     <div class="bs ${st.c}"><div class="dot ${st.d}"></div>${st.l}</div>
   </div>`;
 }
