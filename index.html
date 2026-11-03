@@ -64,6 +64,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .tab:hover:not(.active){color:var(--text)}
 
 /* ── STATS GRID ── */
+.section-title { font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin: 0 0 16px 2px; display: flex; align-items: center; gap: 10px; }
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px}
 .sc{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 18px}
 .sc.acc{background:var(--od);border-color:var(--ob)}
@@ -210,7 +211,12 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
     <div class="tab" onclick="sw('ai',this)">🤖 AI Engine</div>
   </div>
 
-  <div id="t-overview"><div class="sgrid" id="sGrid"></div></div>
+  <!-- OVERVIEW TAB -->
+  <div id="t-overview">
+    <h3 class="section-title">General Account Overview</h3>
+    <div class="sgrid" id="sGridAccount"></div>
+    <div id="campGridsContainer"></div>
+  </div>
 
   <div id="t-campaigns" style="display:none">
     <div class="twrap">
@@ -265,7 +271,7 @@ const ACCOUNT='2495711530616735';
 
 let charts={};
 let comparing=false;
-let lastSum=null,lastCmpSum=null,lastCamps=[],lastAdsByCamp={};
+let lastSum=null,lastCmpSum=null,lastCamps=[], lastCmpCamps=[], lastAdsByCamp={};
 
 // Two date configs: [1]=primary, [2]=compare
 const DC=[null,
@@ -290,7 +296,7 @@ const PRESETS=[
   ['last_7d','Last 7 Days'],['last_14d','Last 14 Days'],['last_30d','Last 30 Days'],['this_month','This Month']
 ];
 
-// Fixed Objective mapping - No more guessing based on funnel data
+// Fixed Objective mapping
 const OBJ_MAP={
   'OUTCOME_SALES':'Sales','OUTCOME_TRAFFIC':'Traffic','OUTCOME_AWARENESS':'Awareness',
   'OUTCOME_ENGAGEMENT':'Engagement','OUTCOME_LEADS':'Leads','OUTCOME_APP_PROMOTION':'App Promo',
@@ -384,7 +390,7 @@ function toggleCompare(){
   $('cmpBtn').classList.toggle('active-compare',comparing);
   $('cmpRow').style.display=comparing?'flex':'none';
   if(comparing)loadData();
-  else{lastCmpSum=null;renderStats(lastSum);}
+  else{lastCmpSum=null; lastCmpCamps=[]; renderOverview(lastSum, lastCmpSum, lastCamps, lastCmpCamps);}
 }
 
 // ── FETCH VIA VERCEL BACKEND ──
@@ -410,10 +416,14 @@ function parseR(row){
   const chk=ga(a,['offsite_conversion.fb_pixel_initiate_checkout','onsite_web_initiate_checkout_facebook_pixel','initiate_checkout']);
   const purch=ga(a,['offsite_conversion.fb_pixel_purchase','purchase','onsite_web_purchase_facebook_pixel']);
   const pmt=ga(a,['offsite_conversion.fb_pixel_add_payment_info','add_payment_info']);
-  const results=purch||ga(a,['lead','complete_registration'])||0;
-  const cpr=gcpr(cpa,['offsite_conversion.fb_pixel_purchase','purchase','lead'])||
-    (results&&row.spend?Number(row.spend)/results:null);
-  return{...row,linkClicks,lpv,atc,chk,purch,pmt,results,cpr};
+  const leads=ga(a,['lead','complete_registration']);
+  const results=purch||leads||linkClicks||0;
+  
+  // Try to find exact CPR, otherwise default to spend / results
+  let cpr=gcpr(cpa,['offsite_conversion.fb_pixel_purchase','purchase','lead']);
+  if(cpr == null && results > 0 && row.spend) cpr = Number(row.spend) / results;
+
+  return{...row,linkClicks,lpv,atc,chk,purch,pmt,leads,results,cpr};
 }
 
 // ── LOAD ──
@@ -423,32 +433,33 @@ async function loadData(){
   const fields='spend,impressions,clicks,ctr,cpm,cpc,reach,frequency,actions,cost_per_action_type';
 
   try{
-    // Fetch campaign objectives
     const objRes=await apiFetch(`${BASE}/${acc}/campaigns?fields=id,name,objective&limit=200`);
     let campObjMap={};
     (objRes.data||[]).forEach(c=>{campObjMap[c.id]=OBJ_MAP[c.objective]||c.objective||'—';});
 
-    // Fetch all levels
     const[sRes,cRes,aRes,tRes]=await Promise.all([
-      apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${dp}`), // Account Sum
-      apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,campaign_name,${fields}&${dp}&level=campaign&limit=100`), // Campaign
-      apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,ad_id,ad_name,${fields}&${dp}&level=ad&limit=500`), // Ad level
-      apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${tp}&time_increment=1`) // Trends
+      apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${dp}`), 
+      apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,campaign_name,${fields}&${dp}&level=campaign&limit=100`), 
+      apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,ad_id,ad_name,${fields}&${dp}&level=ad&limit=500`), 
+      apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${tp}&time_increment=1`)
     ]);
 
-    // Compare period (if active)
     if(comparing){
       const dp2=dparam(2);
-      const cmpRes=await apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${dp2}`);
-      lastCmpSum=parseR(cmpRes.data?.[0]||{});
+      const [cmpSRes, cmpCRes] = await Promise.all([
+        apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${dp2}`),
+        apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,campaign_name,${fields}&${dp2}&level=campaign&limit=100`)
+      ]);
+      lastCmpSum=parseR(cmpSRes.data?.[0]||{});
+      lastCmpCamps=(cmpCRes.data||[]).map(c=>parseR(c));
+    } else {
+      lastCmpSum = null;
+      lastCmpCamps = [];
     }
 
     lastSum=parseR(sRes.data?.[0]||{});
-    
-    // Process Campaigns and map true objective (No infer logic)
     lastCamps=(cRes.data||[]).map(c=>({...parseR(c),objLabel:campObjMap[c.campaign_id]||'—'}));
 
-    // Group Ads by Campaign ID
     lastAdsByCamp = {};
     (aRes.data||[]).forEach(ad => {
         const adData = parseR(ad);
@@ -457,7 +468,10 @@ async function loadData(){
     });
 
     $('campPeriodLabel').textContent=DC[1].label;
-    renderStats(lastSum);
+    
+    // Call our new Master Overview Renderer
+    renderOverview(lastSum, lastCmpSum, lastCamps, lastCmpCamps);
+    
     renderCamps(lastCamps, lastAdsByCamp);
     renderCharts(tRes.data||[]);
     renderBench(lastSum);
@@ -467,7 +481,7 @@ async function loadData(){
   }finally{$('rfSp').style.display='none';}
 }
 
-// ── STATS ──
+// ── OVERVIEW ENGINE ──
 function hintCls(v,good,warn,hib=false){
   if(v==null||isNaN(v))return null;
   if(hib)return v>=good?{t:'✓ Good',c:'g'}:v>=warn?{t:'Average',c:'w'}:{t:'Low',c:'b'};
@@ -483,8 +497,18 @@ function deltaHtml(curr,prev,lowerBetter=false){
   return`<span class="${cls}">${arrow}${Math.abs(d).toFixed(1)}% vs prev</span>`;
 }
 
-function renderStats(s){
-  const p=lastCmpSum;
+function buildGridHtml(s, p, objLabel) {
+  // Determine dynamic labels based on campaign objective
+  let resLabel = 'Results';
+  let costLabel = 'Cost / Result';
+  let resValue = fI(s.results);
+  
+  if (objLabel === 'Sales') {
+    resLabel = 'Purchases'; costLabel = 'Cost / Purchase'; resValue = fI(s.purch);
+  } else if (objLabel === 'Leads') {
+    resLabel = 'Leads'; costLabel = 'Cost / Lead'; resValue = fI(s.leads);
+  }
+
   const cards=[
     {l:'Amount Spent',v:`₹${fN(s.spend)}`,h:null,acc:true,lb:false,pk:'spend'},
     {l:'Impressions',v:fI(s.impressions),h:null,lb:false,pk:'impressions'},
@@ -497,16 +521,31 @@ function renderStats(s){
     {l:'LP Views',v:fI(s.lpv),h:null,lb:false,pk:'lpv'},
     {l:'Add to Cart',v:fI(s.atc),h:null,lb:false,pk:'atc'},
     {l:'Checkouts',v:fI(s.chk),h:null,lb:false,pk:'chk'},
-    {l:'Purchases',v:fI(s.purch),h:null,lb:false,pk:'purch'},
-    {l:'Cost/Purchase',v:s.cpr?`₹${fN(s.cpr)}`:'—',h:hintCls(s.cpr,500,1500),lb:true,pk:'cpr'},
+    {l:resLabel,v:resValue,h:null,lb:false,pk:'results'},
+    {l:costLabel,v:s.cpr?`₹${fN(s.cpr)}`:'—',h:hintCls(s.cpr,500,1500),lb:true,pk:'cpr'},
   ];
-  $('sGrid').innerHTML=cards.map(c=>`
+  
+  return cards.map(c=>`
     <div class="sc${c.acc?' acc':''}">
       <div class="sc-lbl">${c.l}</div>
       <div class="sc-val">${c.v}</div>
       ${c.h?`<div class="sc-hint ${c.h.c}">${c.h.t}</div>`:''}
       ${(p&&c.pk&&p[c.pk]!=null)?`<div class="sc-cmp">${deltaHtml(s[c.pk],p[c.pk],c.lb)}<span style="color:var(--muted);font-size:10px">${c.pk==='spend'||c.pk==='cpc'||c.pk==='cpm'||c.pk==='cpr'?'₹':''}${typeof p[c.pk]==='number'&&!isNaN(p[c.pk])?p[c.pk].toLocaleString('en-IN',{maximumFractionDigits:2}):''}</span></div>`:''}
     </div>`).join('');
+}
+
+function renderOverview(accountSum, accountPrevSum, campaigns, prevCamps) {
+  // 1. Render Top Level Account Grid
+  $('sGridAccount').innerHTML = buildGridHtml(accountSum, accountPrevSum, 'Account');
+
+  // 2. Render Individual Campaign Grids
+  let campHtml = '';
+  campaigns.forEach(c => {
+    const pCamp = prevCamps ? prevCamps.find(p => p.campaign_id === c.campaign_id) : null;
+    campHtml += `<h3 class="section-title" style="margin-top: 40px;">Campaign: ${c.campaign_name} <span class="obj-pill" style="margin-left: 10px;">${c.objLabel}</span></h3>`;
+    campHtml += `<div class="sgrid">${buildGridHtml(c, pCamp, c.objLabel)}</div>`;
+  });
+  $('campGridsContainer').innerHTML = campHtml;
 }
 
 // ── TOGGLE ADS LOGIC ──
@@ -525,7 +564,7 @@ window.toggleAds = function(cId) {
   if(btn) btn.textContent = isHidden ? '+' : '-';
 }
 
-// ── CAMPAIGNS & ADS ──
+// ── CAMPAIGNS & ADS TABLE ──
 function ctrCls(v){return v>1.5?'cg':v>0.5?'cw':'cb';}
 function freqCls(v){return v>4?'cb':v>2.5?'cw':'';}
 function sum(arr,key){return arr.reduce((a,c)=>a+(parseFloat(c[key])||0),0);}
@@ -539,7 +578,6 @@ function renderCamps(camps, ads){
   
   let h = '';
   camps.forEach(c => {
-    // Campaign Row with Toggle Button if Ads exist
     const hasAds = ads[c.campaign_id] && ads[c.campaign_id].length > 0;
     const tglBtn = hasAds ? `<span id="btn-${c.campaign_id}" class="tgl-btn" onclick="toggleAds('${c.campaign_id}')">+</span>` : '';
 
@@ -563,7 +601,6 @@ function renderCamps(camps, ads){
       <td>${c.cpr?fN(c.cpr):'—'}</td>
     </tr>`;
 
-    // Nested Ad Rows (Hidden by Default)
     if(hasAds) {
       ads[c.campaign_id].forEach(ad => {
         h += `<tr class="ad-row ad-grp-${c.campaign_id}" style="display:none;">
@@ -591,7 +628,6 @@ function renderCamps(camps, ads){
   
   $('cTbl').innerHTML = h;
 
-  // Totals row
   const totSpend=sum(camps,'spend');
   const totImp=sumA(camps,'impressions');
   const totReach=sumA(camps,'reach');
@@ -697,30 +733,23 @@ function getAI(){
   $('aiBt').disabled=true;$('aiBt').innerHTML='<span class="sp"></span>ANALYZING...';
   $('aiOut').style.display='none';
   
-  // Fake a small delay to feel like it's "calculating"
   setTimeout(() => {
     const s = lastSum;
     let recs = [];
     
-    // Check 1: Traffic Quality (CTR)
     if(s.ctr < 1.0) recs.push(`<div class="ai-bullet">🔴 <strong>Low Engagement:</strong> Overall CTR is ${pct(s.ctr)}. Your ad creatives are not stopping the scroll. Test new visual hooks or stronger opening copy today.</div>`);
     else recs.push(`<div class="ai-bullet">🟢 <strong>Strong Engagement:</strong> CTR is healthy at ${pct(s.ctr)}. Your creatives are successfully capturing audience attention.</div>`);
     
-    // Check 2: Delivery Cost (CPM)
     if(s.cpm > 200) recs.push(`<div class="ai-bullet">🔴 <strong>Expensive Market:</strong> CPM is very high (₹${fN(s.cpm)}). Competition is fierce for this audience. Consider broadening your targeting.</div>`);
     
-    // Check 3: Site Speed / Drop off
     const lpDrop = s.linkClicks && s.lpv ? ((s.linkClicks - s.lpv)/s.linkClicks*100) : null;
     if(lpDrop > 35) recs.push(`<div class="ai-bullet">🟡 <strong>Site Speed Warning:</strong> ${Math.round(lpDrop)}% of people clicked the ad but didn't wait for the landing page to load. Check mobile page speed immediately.</div>`);
     
-    // Check 4: Intent vs Checkout
     if(s.atc > 0 && s.purch === 0) recs.push(`<div class="ai-bullet">🔴 <strong>Cart Abandonment:</strong> You generated ${s.atc} Adds to Cart but 0 purchases. Check your checkout page for friction, shipping costs, or broken payment gateways.</div>`);
     else if(s.purch > 0) recs.push(`<div class="ai-bullet">🟢 <strong>Funnel converting:</strong> You achieved ${s.purch} purchases at a CPA of ₹${fN(s.cpr)}. Ensure fulfillment is tracking nicely.</div>`);
     
-    // Check 5: Frequency
     if(s.frequency > 3.0) recs.push(`<div class="ai-bullet">🟡 <strong>Ad Fatigue:</strong> Frequency is high (${fN(s.frequency)}). Your audience is seeing the same ads too many times. Refresh creatives soon.</div>`);
     
-    // Fallback if data is empty
     if(s.spend === 0) recs = [`<div class="ai-bullet">⚪ No spend detected in this period. Ensure your campaigns are active and budget is set.</div>`];
 
     $('aiTxt').innerHTML = recs.join('');
