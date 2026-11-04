@@ -156,7 +156,7 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
       <div class="tsub" id="lastFetched">—</div>
     </div>
     <div class="actions">
-      <!-- NEW: LIVE TOGGLE -->
+      <!-- LIVE TOGGLE -->
       <button class="btn-g active-compare" id="liveToggleBtn" onclick="toggleLive()">
         <span class="dot dg" style="margin-right:6px"></span> Live Only
       </button>
@@ -280,13 +280,13 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
 <script>
 const BASE='https://graph.facebook.com/v20.0';
 const ACCOUNT='2495711530616735';
-const TOKEN='hidden_in_backend';
 
 let charts={};
 let comparing=false;
-let filterLive=true; // GLOBAL TOGGLE STATE
+let filterLive=true; 
 let lastSum=null,lastCmpSum=null,lastCamps=[], lastCmpCamps=[], lastAdsByCamp={};
 
+// PRESETS - Added 'maximum' for Lifetime data
 const DC=[null, {type:'preset',preset:'yesterday',label:'Yesterday'}, {type:'preset',preset:'last_7d',label:'Last 7 Days'}];
 const CAL=[null, {y:new Date().getFullYear(),m:new Date().getMonth(),s:null,e:null}, {y:new Date().getFullYear(),m:new Date().getMonth(),s:null,e:null}];
 const $=id=>document.getElementById(id);
@@ -296,9 +296,11 @@ const pct=n=>n==null||isNaN(n)?'—':`${Number(n).toFixed(2)}%`;
 const acId=id=>id.startsWith('act_')?id:`act_${id.trim()}`;
 const fd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// Included Lifetime (maximum) option for full historical view
 const PRESETS=[
   ['today','Today'],['yesterday','Yesterday'],['last2','Last 2 Days'],['last3','Last 3 Days'],['last4','Last 4 Days'],
-  ['last_7d','Last 7 Days'],['last_14d','Last 14 Days'],['last_30d','Last 30 Days'],['this_month','This Month']
+  ['last_7d','Last 7 Days'],['last_14d','Last 14 Days'],['last_30d','Last 30 Days'],['this_month','This Month'],['maximum','Lifetime']
 ];
 
 const OBJ_MAP={
@@ -391,7 +393,6 @@ function trendParam(){
 function triggerRenders() {
   $('campPeriodLabel').textContent = DC[1].label + (filterLive ? " (Live Only)" : " (All Data)");
   
-  // Filter Data Arrays Based on Toggle
   const fCamps = filterLive ? lastCamps.filter(c => c.status === 'ACTIVE') : lastCamps;
   const fCmpCamps = filterLive && lastCmpCamps ? lastCmpCamps.filter(c => c.status === 'ACTIVE') : lastCmpCamps;
   
@@ -400,7 +401,6 @@ function triggerRenders() {
      fAds[cId] = filterLive ? lastAdsByCamp[cId].filter(a => a.status === 'ACTIVE') : lastAdsByCamp[cId];
   }
 
-  // Calculate dynamic display sum for Account Overview if filtering
   let displaySum = lastSum;
   if(filterLive && lastSum) {
       displaySum = {
@@ -420,7 +420,6 @@ function triggerRenders() {
   renderOverview(displaySum, lastCmpSum, fCamps, fCmpCamps);
   renderCamps(fCamps, fAds);
   
-  // Also pass the filtered arrays to AI so it doesn't analyze paused ads
   window.currentAIContext = { sum: displaySum, camps: fCamps, ads: fAds };
 }
 
@@ -498,10 +497,9 @@ async function loadData(){
   const fields='spend,impressions,clicks,ctr,cpm,cpc,reach,frequency,actions';
 
   try{
-    // Fetch Statuses alongside Objectives
     const [objRes, adStatusRes] = await Promise.all([
-      apiFetch(`${BASE}/${acc}/campaigns?fields=id,name,objective,effective_status&limit=200`),
-      apiFetch(`${BASE}/${acc}/ads?fields=id,effective_status&limit=1000`)
+      apiFetch(`${BASE}/${acc}/campaigns?fields=id,name,objective,effective_status&limit=1000`),
+      apiFetch(`${BASE}/${acc}/ads?fields=id,effective_status&limit=2000`)
     ]);
     
     let campMeta={};
@@ -511,8 +509,8 @@ async function loadData(){
 
     const[sRes,cRes,aRes,tRes]=await Promise.all([
       apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${dp}`), 
-      apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,campaign_name,${fields}&${dp}&level=campaign&limit=100`), 
-      apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,ad_id,ad_name,${fields}&${dp}&level=ad&limit=500`), 
+      apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,campaign_name,${fields}&${dp}&level=campaign&limit=1000`), 
+      apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,ad_id,ad_name,${fields}&${dp}&level=ad&limit=2000`), 
       apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${tp}&time_increment=1`)
     ]);
 
@@ -520,7 +518,7 @@ async function loadData(){
       const dp2=dparam(2);
       const [cmpSRes, cmpCRes] = await Promise.all([
         apiFetch(`${BASE}/${acc}/insights?fields=${fields}&${dp2}`),
-        apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,campaign_name,${fields}&${dp2}&level=campaign&limit=100`)
+        apiFetch(`${BASE}/${acc}/insights?fields=campaign_id,campaign_name,${fields}&${dp2}&level=campaign&limit=1000`)
       ]);
       lastCmpSum=parseR(cmpSRes.data?.[0]||{});
       lastCmpCamps=(cmpCRes.data||[]).map(c=>{
@@ -877,11 +875,11 @@ function getAI(){
           ads[c.campaign_id].forEach(ad => {
             if(ad.spend > 0) {
                if(ad.frequency > 3.0) {
-                 recs.push(`<div class="ai-bullet indent"><strong>Ad Fatigue:</strong> "${ad.ad_name}" is burning out (Freq: ${fN(ad.frequency)}). <strong>ACTION:</strong> Turn off this specific ad. Introduce 2-3 completely new creatives to reset the audience's attention.</div>`);
+                 recs.push(`<div class="ai-bullet indent" style="color:var(--warn)"><strong>Ad Fatigue:</strong> "${ad.ad_name}" is burning out (Freq: ${fN(ad.frequency)}). <strong>ACTION:</strong> Turn off this specific ad. Introduce 2-3 completely new creatives to reset the audience's attention.</div>`);
                  flaggedAds++;
                }
                if(ad.ctr < 0.8 && ad.impressions > 500) {
-                 recs.push(`<div class="ai-bullet indent"><strong>Poor Hook:</strong> "${ad.ad_name}" has a low CTR (${pct(ad.ctr)}). <strong>ACTION:</strong> Your creative is being ignored. Redesign the first 3 seconds of the video or use a more pattern-interrupting headline.</div>`);
+                 recs.push(`<div class="ai-bullet indent" style="color:var(--bad)"><strong>Poor Hook:</strong> "${ad.ad_name}" has a low CTR (${pct(ad.ctr)}). <strong>ACTION:</strong> Your creative is being ignored. Redesign the first 3 seconds of the video or use a more pattern-interrupting headline.</div>`);
                  flaggedAds++;
                }
             }
