@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
+<!-- ANTI-CACHING TAGS TO PREVENT OLD UI GLITCH -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <title>One Good Object | Meta Ads</title>
 <!-- Browser Tab Logo (Favicon) -->
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23f97316%22/><circle cx=%2250%22 cy=%2250%22 r=%2225%22 fill=%22%23000%22/></svg>">
@@ -353,7 +357,10 @@ function toggleCal(n){
   document.querySelectorAll('.ddrop').forEach(d=>d.classList.remove('open'));
   if(!open){initPresetList(n);drawCal(n);drop.classList.add('open');}
 }
+
+// FIX FOR RE-RENDER GLITCH - Prevents menu from auto-closing when selecting a date
 document.addEventListener('click',e=>{
+  if(!document.body.contains(e.target)) return; 
   if(!$('dWrap1').contains(e.target)&&!($('dWrap2')&&$('dWrap2').contains(e.target)))
     document.querySelectorAll('.ddrop').forEach(d=>d.classList.remove('open'));
 });
@@ -833,7 +840,6 @@ function renderBench(s){
   $('benchGrid').innerHTML=h;
 }
 
-// ── ADVANCED AI ENGINE: DYNAMIC, TIERED ACTION PLAN ──
 function getAI(){
   const ctx = window.currentAIContext;
   if(!ctx || !ctx.sum){alert('Load data first');return;}
@@ -846,32 +852,26 @@ function getAI(){
     const camps = ctx.camps;
     const ads = ctx.ads;
     
-    // 1. ACCOUNT LEVEL
     recs.push(`<div class="ai-h4">🌍 ACCOUNT OVERVIEW</div>`);
     if(sum.spend === 0) {
       recs.push(`<div class="ai-bullet">No spend detected across the filtered selection. <strong>ACTION:</strong> Check billing and ensure campaigns are toggled ON.</div>`);
     } else {
-      // Dynamic CPM Logic
       if(sum.cpm > 400) recs.push(`<div class="ai-bullet">🔴 <strong>Critically High CPM:</strong> Account CPM is ₹${fN(sum.cpm)}. <strong>ACTION:</strong> Your audience is severely fatigued or too narrow. Immediately test broader interests or Advantage+ audiences.</div>`);
       else if(sum.cpm > 250) recs.push(`<div class="ai-bullet">🟡 <strong>Expensive Market:</strong> Account CPM is elevated (₹${fN(sum.cpm)}). <strong>ACTION:</strong> Monitor frequency. Consider testing new creative formats (like Reels/TikTok style) to win cheaper auction bids.</div>`);
       else recs.push(`<div class="ai-bullet">🟢 <strong>Healthy Delivery:</strong> Account CPM is very cost-effective (₹${fN(sum.cpm)}). <strong>ACTION:</strong> Capitalize on this cheap traffic by marginally increasing daily budgets.</div>`);
 
-      // Dynamic CTR Logic
       if(sum.ctr < 1.0) recs.push(`<div class="ai-bullet">🔴 <strong>Weak Account Hook:</strong> Overall CTR is ${pct(sum.ctr)}. <strong>ACTION:</strong> Scroll-stopping power is low. Test high-contrast visuals or more aggressive text overlays in the first 3 seconds.</div>`);
     }
 
-    // 2. CAMPAIGN LEVEL
     camps.forEach(c => {
       if(c.spend > 0) {
         recs.push(`<div class="ai-h4">📦 CAMPAIGN: ${c.campaign_name.toUpperCase()}</div>`);
         
-        // Traffic Leak / Page Speed Logic
         const lpDrop = c.linkClicks && c.lpv ? ((c.linkClicks - c.lpv)/c.linkClicks*100) : 0;
         if(lpDrop > 40) recs.push(`<div class="ai-bullet indent">🔴 <strong>Severe Traffic Leak:</strong> ${Math.round(lpDrop)}% of clicks bounce before loading. <strong>ACTION:</strong> Compress landing page images and audit mobile load speeds.</div>`);
         else if(lpDrop > 20) recs.push(`<div class="ai-bullet indent">🟡 <strong>Moderate Traffic Leak:</strong> ${Math.round(lpDrop)}% drop-off. <strong>ACTION:</strong> Check server response times during peak hours.</div>`);
         else if(c.linkClicks > 10) recs.push(`<div class="ai-bullet indent">🟢 <strong>Excellent Page Speed:</strong> Only ${Math.round(lpDrop)}% drop-off. Users are successfully reaching your landing page.</div>`);
 
-        // Funnel Logic
         if (c.objLabel === 'Sales') {
             const clickToCart = c.linkClicks ? (c.atc / c.linkClicks) : 0;
             const cartToPurch = c.atc ? (c.purch / c.atc) : 0;
@@ -890,7 +890,6 @@ function getAI(){
             }
         }
 
-        // 3. AD LEVEL
         if(ads[c.campaign_id]) {
           let flaggedAds = 0;
           ads[c.campaign_id].forEach(ad => {
