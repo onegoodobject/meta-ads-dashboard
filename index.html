@@ -34,6 +34,9 @@ body{background:var(--bg);color:var(--text);min-height:100vh; overflow-y: scroll
 .btn-g{background:transparent;border:1px solid var(--border);border-radius:6px;padding:8px 16px;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s ease; display:flex; align-items:center; gap:6px;}
 .btn-g:hover{background: rgba(255,255,255,0.03); color:var(--text)}
 .btn-g.active-compare{color:var(--orange); border-color: var(--ob);}
+.btn-o{background:var(--orange);border:none;border-radius:8px;padding:10px 24px;color:#000;font-size:13px;font-weight:700;cursor:pointer; transition: opacity .2s;}
+.btn-o:hover{opacity:0.9}
+.btn-o:disabled{opacity:.5;cursor:not-allowed}
 
 /* ── DATE PICKERS ── */
 .dpicker-row{display:flex;align-items:center;gap:12px;margin-bottom:32px;flex-wrap:wrap}
@@ -179,7 +182,7 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
     <div class="dw" id="dWrap1">
       <div class="dbtn" onclick="toggleCal(1)">
         <svg class="cal-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <span id="dLabel1">Yesterday</span>
+        <span id="dLabel1">Today</span>
       </div>
       <div class="ddrop" id="dDrop1">
         <div class="preset-list" id="plist1"></div>
@@ -201,7 +204,7 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
       <div class="dw" id="dWrap2">
         <div class="dbtn cmp-active" onclick="toggleCal(2)">
           <svg class="cal-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <span id="dLabel2">Previous Period</span>
+          <span id="dLabel2">Yesterday</span>
         </div>
         <div class="ddrop" id="dDrop2">
           <div class="preset-list" id="plist2"></div>
@@ -285,7 +288,7 @@ tfoot tr td{border-top:1px solid var(--border);color:var(--orange);font-weight:7
 </div>
 
 <script>
-const BASE='https://graph.facebook.com/v20.0';
+const BASE='https://graph.facebook.com/v21.0';
 const ACCOUNT='2495711530616735';
 const TOKEN='hidden_in_backend';
 
@@ -293,6 +296,8 @@ let charts={};
 let comparing=false;
 let filterLive=true; 
 let lastSum=null,lastCmpSum=null,lastCamps=[], lastCmpCamps=[], lastAdsByCamp={};
+let campGoalActionMap={}; // Maps campaign_id -> exact Meta action_type optimized by its Ad Sets
+let accountLeadActions=[]; // Exact lead action_types used across active/leads campaigns
 
 const DC=[null, {type:'preset',preset:'today',label:'Today'}, {type:'preset',preset:'yesterday',label:'Yesterday'}];
 const CAL=[null, {y:new Date().getFullYear(),m:new Date().getMonth(),s:null,e:null}, {y:new Date().getFullYear(),m:new Date().getMonth(),s:null,e:null}];
@@ -314,6 +319,16 @@ const OBJ_MAP={
   'OUTCOME_ENGAGEMENT':'Engagement','OUTCOME_LEADS':'Leads','OUTCOME_APP_PROMOTION':'App Promo',
   'CONVERSIONS':'Sales','LINK_CLICKS':'Traffic','REACH':'Awareness','BRAND_AWARENESS':'Awareness',
   'VIDEO_VIEWS':'Video Views','LEAD_GENERATION':'Leads','MESSAGES':'Messages','CATALOG_SALES':'Catalog Sales'
+};
+
+// Map standard Meta custom_event_type enums to Insights API action_type strings
+const PIXEL_EVENT_MAP={
+  'LEAD':'offsite_conversion.fb_pixel_lead',
+  'COMPLETE_REGISTRATION':'offsite_conversion.fb_pixel_complete_registration',
+  'CONTACT':'contact_total',
+  'SUBMIT_APPLICATION':'submit_application_total',
+  'SCHEDULE':'schedule_total',
+  'PURCHASE':'offsite_conversion.fb_pixel_purchase'
 };
 
 function initPresetList(n){
@@ -358,7 +373,6 @@ function toggleCal(n){
   if(!open){initPresetList(n);drawCal(n);drop.classList.add('open');}
 }
 
-// FIX FOR RE-RENDER GLITCH - Prevents menu from auto-closing when selecting a date
 document.addEventListener('click',e=>{
   if(!document.body.contains(e.target)) return; 
   if(!$('dWrap1').contains(e.target)&&!($('dWrap2')&&$('dWrap2').contains(e.target)))
@@ -376,6 +390,7 @@ function setPreset(n,preset,label){
 
 function dparam(n){
   const d=DC[n];
+  let base='';
   if(d.type==='preset'){
     if(d.preset.startsWith('last')){
       const days=parseInt(d.preset.replace('last',''));
@@ -383,17 +398,20 @@ function dparam(n){
         const now=new Date();
         const until=new Date(now);until.setDate(until.getDate()-1);
         const since=new Date(now);since.setDate(since.getDate()-days);
-        return`time_range={"since":"${fd(since)}","until":"${fd(until)}"}`;
+        base=`time_range={"since":"${fd(since)}","until":"${fd(until)}"}`;
       }
     }
-    return`date_preset=${d.preset}`;
+    if(!base) base=`date_preset=${d.preset}`;
+  } else {
+    base=`time_range={"since":"${d.since}","until":"${d.until}"}`;
   }
-  return`time_range={"since":"${d.since}","until":"${d.until}"}`;
+  // Force Insights API to use exact Ad Set attribution windows shown in Ads Manager UI
+  return `${base}&use_unified_attribution_setting=true`;
 }
 
 function trendParam(){
   const d=DC[1];
-  if(d.type==='preset'&&['today','yesterday'].includes(d.preset))return'date_preset=last_7d';
+  if(d.type==='preset'&&['today','yesterday'].includes(d.preset))return'date_preset=last_7d&use_unified_attribution_setting=true';
   return dparam(1);
 }
 
@@ -475,7 +493,8 @@ const ga=(actions,types)=>{
 
 const emptyRow = () => ({ spend:0, impressions:0, reach:0, frequency:0, linkClicks:0, ctr:0, cpc:0, cpm:0, lpv:0, atc:0, chk:0, purch:0, pmt:0, leads:0 });
 
-function parseR(row){
+// Strict conversion parser: locks onto the exact campaign optimization goal with ZERO fallback when 0
+function parseR(row, campaignId=null){
   if(!row) return emptyRow();
   const a=row.actions||[];
   const linkClicks=ga(a,['link_click','inline_link_clicks']);
@@ -485,15 +504,17 @@ function parseR(row){
   const purch=ga(a,['purchase','offsite_conversion.fb_pixel_purchase']);
   const pmt=ga(a,['add_payment_info','offsite_conversion.fb_pixel_add_payment_info']);
   
-  let customLeads = 0;
-  a.forEach(act => {
-     if(act.action_type && act.action_type.includes('offsite_conversion.custom')) {
-         customLeads += Number(act.value||0);
-     }
-  });
-  
-  const standardLeads = ga(a,['lead','offsite_conversion.fb_pixel_lead','complete_registration']);
-  const leads = customLeads > 0 ? customLeads : standardLeads;
+  let leads = 0;
+  const targetGoal = campaignId ? campGoalActionMap[campaignId] : null;
+  if (targetGoal) {
+    // Strictly read ONLY the exact conversion event configured on this campaign's Ad Set
+    leads = ga(a, Array.isArray(targetGoal) ? targetGoal : [targetGoal]);
+  } else if (accountLeadActions.length > 0) {
+    // For account-level / daily trend rows, read ONLY the exact lead events used by Leads campaigns
+    leads = ga(a, accountLeadActions);
+  } else {
+    leads = ga(a, ['offsite_conversion.fb_pixel_lead', 'lead']);
+  }
   
   const spend = Number(row.spend||0);
   const impressions = Number(row.impressions||0);
@@ -513,13 +534,41 @@ async function loadData(){
   const fields='spend,impressions,clicks,ctr,cpm,cpc,reach,frequency,actions';
 
   try{
-    const [objRes, adStatusRes] = await Promise.all([
+    const [objRes, adsetRes, adStatusRes] = await Promise.all([
       apiFetch(`${BASE}/${acc}/campaigns?fields=id,name,objective,effective_status&limit=1000`),
+      apiFetch(`${BASE}/${acc}/adsets?fields=id,campaign_id,optimization_goal,promoted_object,effective_status&limit=1000`),
       apiFetch(`${BASE}/${acc}/ads?fields=id,name,campaign_id,effective_status&limit=2000`)
     ]);
     
     let campMeta={};
     (objRes.data||[]).forEach(c=>{ campMeta[c.id]={ name: c.name, obj: OBJ_MAP[c.objective]||c.objective||'—', status: c.effective_status }; });
+
+    // Discover the EXACT conversion action_type each Leads campaign optimizes for in Ads Manager
+    campGoalActionMap={};
+    let leadActionSet = new Set();
+    (adsetRes.data||[]).forEach(as => {
+      const cObj = campMeta[as.campaign_id]?.obj;
+      const po = as.promoted_object || {};
+      let mapped = null;
+      if (po.custom_conversion_id) {
+        mapped = [`offsite_conversion.custom.${po.custom_conversion_id}`];
+      } else if (po.custom_event_str) {
+        mapped = [`offsite_conversion.fb_pixel_custom.${po.custom_event_str}`, po.custom_event_str];
+      } else if (po.custom_event_type && PIXEL_EVENT_MAP[po.custom_event_type]) {
+        mapped = [PIXEL_EVENT_MAP[po.custom_event_type]];
+      } else if (as.optimization_goal === 'LEAD_GENERATION') {
+        mapped = ['onsite_conversion.lead_grouped', 'leadgen_grouped', 'lead'];
+      }
+      if (mapped && cObj === 'Leads') {
+        // Prefer ACTIVE ad set goal if multiple ad sets exist
+        if (!campGoalActionMap[as.campaign_id] || as.effective_status === 'ACTIVE') {
+          campGoalActionMap[as.campaign_id] = mapped;
+        }
+        mapped.forEach(m => leadActionSet.add(m));
+      }
+    });
+    accountLeadActions = Array.from(leadActionSet);
+
     let adMeta={};
     (adStatusRes.data||[]).forEach(a=>{ adMeta[a.id]={ name: a.name, cId: a.campaign_id, status: a.effective_status }; });
 
@@ -539,7 +588,11 @@ async function loadData(){
       lastCmpSum=parseR(cmpSRes.data?.[0]||{});
       lastCmpCamps=(cmpCRes.data||[]).map(c=>{
           const meta = campMeta[c.campaign_id]||{};
-          return {...parseR(c), status: meta.status || 'PAUSED'};
+          const pr = parseR(c, c.campaign_id);
+          const obj = meta.obj || '—';
+          let res = obj === 'Sales' ? pr.purch : obj === 'Leads' ? pr.leads : pr.linkClicks;
+          let cpr = res > 0 ? pr.spend / res : null;
+          return {...pr, status: meta.status || 'PAUSED', results: res, cpr: cpr};
       });
     } else {
       lastCmpSum = null;
@@ -551,7 +604,7 @@ async function loadData(){
     const campInsights = cRes.data||[];
     lastCamps = (objRes.data||[]).map(masterC => {
         const rawIns = campInsights.find(c => c.campaign_id === masterC.id);
-        const pr = parseR(rawIns);
+        const pr = parseR(rawIns, masterC.id);
         const obj = campMeta[masterC.id]?.obj || '—';
         const stat = masterC.effective_status || 'PAUSED';
         let res = 0; let cpr = null;
@@ -563,11 +616,14 @@ async function loadData(){
     });
     lastCamps.sort((a,b) => b.spend - a.spend || (a.status === 'ACTIVE' ? -1 : 1));
 
+    // Recompute Account Summary leads from exact campaign-level leads so Account & Campaign views always match
+    lastSum.leads = sumA(lastCamps, 'leads');
+
     lastAdsByCamp = {};
     const adInsights = aRes.data||[];
     (adStatusRes.data||[]).forEach(masterA => {
         const rawIns = adInsights.find(a => a.ad_id === masterA.id);
-        const adData = parseR(rawIns);
+        const adData = parseR(rawIns, masterA.campaign_id);
         const adObj = campMeta[masterA.campaign_id]?.obj || '—';
         const adStat = masterA.effective_status || 'PAUSED';
         
@@ -791,10 +847,10 @@ function mkChart(id,labels,data,color,type='bar',pre=''){
 function renderCharts(rows){
   const labels=rows.map(r=>r.date_start?.slice(5)||'');
   const pr=rows.map(r=>parseR(r));
-  mkChart('cSpend',labels,rows.map(r=>+(r.spend||0)),'#f97316','bar','₹');
-  mkChart('cCTR',labels,rows.map(r=>+(r.ctr||0)),'#38bdf8','line','');
-  mkChart('cClicks',labels,rows.map(r=>+(r.clicks||0)),'#a78bfa','bar','');
-  mkChart('cCPM',labels,rows.map(r=>+(r.cpm||0)),'#34d399','line','₹');
+  mkChart('cSpend',labels,pr.map(r=>r.spend||0),'#f97316','bar','₹');
+  mkChart('cCTR',labels,pr.map(r=>r.ctr||0),'#38bdf8','line','');
+  mkChart('cClicks',labels,pr.map(r=>r.linkClicks||0),'#a78bfa','bar','');
+  mkChart('cCPM',labels,pr.map(r=>r.cpm||0),'#34d399','line','₹');
   mkChart('cATC',labels,pr.map(r=>r.atc||0),'#f59e0b','bar','');
   mkChart('cLeads',labels,pr.map(r=>r.leads||0),'#22c55e','bar','');
 }
@@ -831,7 +887,7 @@ function renderBench(s){
   h+=bRow('Add to Cart',fI(s.atc),'Funnel volume',INF);
   h+=bRow('Checkouts Initiated',fI(s.chk),'Funnel volume',INF);
   h+=bRow('Purchases',fI(s.purch),'Primary conversion',INF);
-  h+=bRow('Queries / Leads',fI(s.leads),'Custom & standard leads',INF);
+  h+=bRow('Queries / Leads',fI(s.leads),'Exact optimized conversion event',INF);
   h+=bRow('Click → Cart Rate',cl2c!=null?pct(cl2c):'—','> 3% good · 1–3% avg · < 1% low',bSt(cl2c,3,1,true));
   h+=bRow('Cart → Purchase Rate',c2p!=null?pct(c2p):'—','> 10% good · 5–10% avg · < 5% low',bSt(c2p,10,5,true));
   h+=bSec('EFFICIENCY');
@@ -870,7 +926,7 @@ function getAI(){
         const lpDrop = c.linkClicks && c.lpv ? ((c.linkClicks - c.lpv)/c.linkClicks*100) : 0;
         if(lpDrop > 40) recs.push(`<div class="ai-bullet indent">🔴 <strong>Severe Traffic Leak:</strong> ${Math.round(lpDrop)}% of clicks bounce before loading. <strong>ACTION:</strong> Compress landing page images and audit mobile load speeds.</div>`);
         else if(lpDrop > 20) recs.push(`<div class="ai-bullet indent">🟡 <strong>Moderate Traffic Leak:</strong> ${Math.round(lpDrop)}% drop-off. <strong>ACTION:</strong> Check server response times during peak hours.</div>`);
-        else if(c.linkClicks > 10) recs.push(`<div class="ai-bullet indent">🟢 <strong>Excellent Page Speed:</strong> Only ${Math.round(lpDrop)}% drop-off. Users are successfully reaching your landing page.</div>`);
+        else if(c.linkClicks > 10) recs.push(`<div class="ai-bullet indent">🟢 <strong>Excellent Page Speed:</strong> Only ${Math.round(Math.max(0,lpDrop))}% drop-off. Users are successfully reaching your landing page.</div>`);
 
         if (c.objLabel === 'Sales') {
             const clickToCart = c.linkClicks ? (c.atc / c.linkClicks) : 0;
@@ -909,7 +965,7 @@ function getAI(){
                }
             }
           });
-          if(flaggedAds === 0 && c.spend > 0) recs.push(`<div class="ai-bullet indent">🟢 All active ads are within healthy engagement (CTR) and frequency (<2.0) benchmarks.</div>`);
+          if(flaggedAds === 0 && c.spend > 0) recs.push(`<div class="ai-bullet indent">🟢 All active ads are within healthy engagement (CTR) and frequency (less than 2.0) benchmarks.</div>`);
         }
       }
     });
